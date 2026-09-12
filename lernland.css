@@ -1,0 +1,175 @@
+:root {
+  --ll-ink: #000000;
+  --ll-muted: #4a4a4a;
+  --ll-paper: #ffffff;
+  --ll-page-bg: #ffffff;
+  --ll-line: #000000;
+  --ll-line-soft: #d9d9d9;
+  --ll-accent: #ee5522;
+  --ll-success: #237a57;
+  --ll-success-bg: #e5f4ec;
+  --ll-error: #cf2e2e;
+  --ll-error-bg: #fdeaea;
+  --ll-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  --ll-border-width: 3px;
+  --ll-radius: 8px;
+  --ll-radius-sm: 5px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body.ll-page {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ll-ink);
+  background: var(--ll-page-bg);
+  font-family: var(--ll-font-ui);
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.ll-card {
+  width: min(720px, calc(100% - 32px));
+  margin: 48px auto;
+  padding: 40px;
+  background: var(--ll-paper);
+  border: var(--ll-border-width) solid var(--ll-line);
+  border-radius: var(--ll-radius);
+}
+
+.ll-eyebrow {
+  margin: 0 0 8px;
+  color: var(--ll-ink);
+  font: 700 0.8rem/1.2 var(--ll-font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ll-card h1 {
+  margin: 0;
+  color: var(--ll-ink);
+  font-family: var(--ll-font-ui);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.2;
+}
+
+.ll-intro {
+  margin: 18px 0 30px;
+  color: var(--ll-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ll-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: var(--ll-muted);
+  font: 700 0.85rem var(--ll-font-ui);
+}
+
+.ll-progress-bar {
+  height: 8px;
+  overflow: hidden;
+  background: var(--ll-line-soft);
+  border-radius: 10px;
+}
+
+.ll-progress-bar > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--ll-accent);
+  transition: width 250ms ease;
+}
+
+.ll-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--ll-grid-cols, 2), 1fr);
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.ll-tile {
+  min-height: 62px;
+  padding: 14px 18px;
+  color: var(--ll-ink);
+  background: var(--ll-paper);
+  border: var(--ll-border-width) solid var(--ll-line);
+  border-radius: var(--ll-radius-sm);
+  cursor: pointer;
+  font: 700 1.05rem var(--ll-font-ui);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.ll-tile:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+.ll-tile.is-selected { background: #d4d4d4; border-width: calc(var(--ll-border-width) + 1px); }
+.ll-tile.is-correct { color: var(--ll-success); background: var(--ll-success-bg); border-color: var(--ll-success); }
+.ll-tile.is-incorrect { color: var(--ll-error); background: var(--ll-error-bg); border-color: var(--ll-error); }
+.ll-tile:disabled { cursor: default; }
+.ll-tile:disabled:hover { transform: none; box-shadow: none; }
+
+.ll-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.ll-btn {
+  padding: 13px 22px;
+  color: var(--ll-paper);
+  background: var(--ll-ink);
+  border: var(--ll-border-width) solid var(--ll-ink);
+  border-radius: var(--ll-radius-sm);
+  cursor: pointer;
+  font: 700 1rem var(--ll-font-ui);
+}
+
+.ll-btn:hover { background: #262626; }
+.ll-btn:disabled { background: #a0a0a0; border-color: #a0a0a0; cursor: not-allowed; }
+
+.ll-btn--ghost {
+  background: var(--ll-paper);
+  color: var(--ll-ink);
+}
+
+.ll-btn--ghost:hover { background: #f6f6f6; }
+
+.ll-input {
+  padding: 12px 14px;
+  border: var(--ll-border-width) solid var(--ll-line);
+  border-radius: var(--ll-radius-sm);
+  font: inherit;
+  color: var(--ll-ink);
+}
+
+.ll-input:focus { outline: none; background: #f6f6f6; }
+
+.ll-feedback {
+  min-height: 1.5em;
+  margin: 0;
+  font: 700 1rem var(--ll-font-ui);
+}
+
+.ll-feedback.is-success { color: var(--ll-success); }
+.ll-feedback.is-error { color: var(--ll-error); }
+
+.ll-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 520px) {
+  .ll-card { margin: 20px auto; padding: 26px 20px; }
+  .ll-grid { grid-template-columns: 1fr; }
+}
