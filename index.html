@@ -3,121 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adjektive finden | Lernland</title>
+  <title>Willkommen | Lernland</title>
   <link rel="stylesheet" href="lernland.css">
 </head>
 <body class="ll-page">
   <main class="ll-card">
-    <p class="ll-eyebrow">Wortarten üben</p>
-    <h1>Finde die Adjektive</h1>
-    <p class="ll-intro">Welche Wörter beschreiben, wie jemand oder etwas ist? Wähle alle Adjektive aus.</p>
-
-    <div class="ll-progress">
-      <span id="round-label">Runde 1 von 1</span>
-      <span id="score-label">0 von 10 richtig</span>
-    </div>
-    <div class="ll-progress-bar" aria-hidden="true"><span id="progress-fill"></span></div>
-
-    <section aria-labelledby="word-heading">
-      <h2 id="word-heading" class="ll-visually-hidden">Wörter auswählen</h2>
-      <div class="ll-grid" id="word-list"></div>
-    </section>
-
-    <div class="ll-actions">
-      <button class="ll-btn" id="check-button" type="button" disabled>Auswahl prüfen</button>
-      <button class="ll-btn ll-btn--ghost" id="restart-button" type="button" hidden>Nochmal spielen</button>
-      <p class="ll-feedback" id="feedback" role="status" aria-live="polite"></p>
-    </div>
+    <p class="ll-eyebrow">Lernland</p>
+    <h1>Willkommen</h1>
+    <p class="ll-intro">Hier entstehen die interaktiven Übungen von Lernland.</p>
   </main>
-
-  <script>
-    const words = [
-      { text: "fröhlich", adjective: true },
-      { text: "laufen", adjective: false },
-      { text: "klein", adjective: true },
-      { text: "Schule", adjective: false },
-      { text: "glänzend", adjective: true },
-      { text: "springen", adjective: false },
-      { text: "mutig", adjective: true },
-      { text: "Freund", adjective: false },
-      { text: "leise", adjective: true },
-      { text: "lesen", adjective: false }
-    ];
-
-    const wordList = document.querySelector("#word-list");
-    const checkButton = document.querySelector("#check-button");
-    const restartButton = document.querySelector("#restart-button");
-    const feedback = document.querySelector("#feedback");
-    const scoreLabel = document.querySelector("#score-label");
-    const progressFill = document.querySelector("#progress-fill");
-    let selectedWords = new Set();
-    let roundWords = [];
-
-    function shuffleWords() {
-      roundWords = [...words];
-      for (let index = roundWords.length - 1; index > 0; index--) {
-        const randomIndex = Math.floor(Math.random() * (index + 1));
-        [roundWords[index], roundWords[randomIndex]] = [roundWords[randomIndex], roundWords[index]];
-      }
-    }
-
-    function renderWords() {
-      wordList.innerHTML = "";
-      roundWords.forEach((word, index) => {
-        const button = document.createElement("button");
-        button.className = "ll-tile";
-        button.type = "button";
-        button.textContent = word.text;
-        button.dataset.index = index;
-        button.addEventListener("click", () => {
-          selectedWords.has(index) ? selectedWords.delete(index) : selectedWords.add(index);
-          button.classList.toggle("is-selected", selectedWords.has(index));
-          checkButton.disabled = selectedWords.size === 0;
-          feedback.textContent = "";
-          feedback.className = "ll-feedback";
-        });
-        wordList.appendChild(button);
-      });
-    }
-
-    function checkAnswers() {
-      const buttons = [...wordList.children];
-      let correct = 0;
-      roundWords.forEach((word, index) => {
-        const isSelected = selectedWords.has(index);
-        const isCorrect = isSelected === word.adjective;
-        buttons[index].disabled = true;
-        buttons[index].classList.remove("is-selected");
-        buttons[index].classList.add(isCorrect ? "is-correct" : "is-incorrect");
-        if (isCorrect) correct++;
-      });
-      scoreLabel.textContent = `${correct} von ${words.length} richtig`;
-      progressFill.style.width = `${correct / words.length * 100}%`;
-      feedback.textContent = correct === words.length
-        ? "Alles richtig! Stark gemacht."
-        : `Du hast ${correct} von ${words.length} Wörtern richtig eingeordnet.`;
-      feedback.className = correct === words.length ? "ll-feedback is-success" : "ll-feedback is-error";
-      checkButton.hidden = true;
-      restartButton.hidden = false;
-    }
-
-    function restart() {
-      selectedWords = new Set();
-      shuffleWords();
-      checkButton.hidden = false;
-      checkButton.disabled = true;
-      restartButton.hidden = true;
-      scoreLabel.textContent = "0 von 10 richtig";
-      progressFill.style.width = "0";
-      feedback.textContent = "";
-      feedback.className = "ll-feedback";
-      renderWords();
-    }
-
-    checkButton.addEventListener("click", checkAnswers);
-    restartButton.addEventListener("click", restart);
-    shuffleWords();
-    renderWords();
-  </script>
 </body>
 </html>
