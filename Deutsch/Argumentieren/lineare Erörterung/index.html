@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Argumentieren | Lernland</title>
+  <link rel="stylesheet" href="../../../lernland.css">
+  <style>
+    .standpunkt-wrap { max-width: 420px; margin: 0 auto; }
+
+    #arg-grid { --ll-grid-cols: 6; gap: 6px; align-items: start; }
+    @media (max-width: 900px) { #arg-grid { --ll-grid-cols: 3; } }
+    @media (max-width: 560px) { #arg-grid { --ll-grid-cols: 2; } }
+    @media (max-width: 380px) { #arg-grid { --ll-grid-cols: 1; } }
+
+    #arg-grid .ll-arg-card { padding: 4px; gap: 3px; }
+    #arg-grid .ll-box { padding: 6px 6px; border-radius: 8px; }
+    #arg-grid .ll-box-title,
+    #arg-grid .ll-box-text,
+    #arg-grid .ll-arg-card-note {
+      display: block;
+      line-height: 1.15;
+    }
+    #arg-grid .ll-box-title { margin: 0 0 2px; font-size: 0.68rem; }
+    #arg-grid .ll-box-text { font-size: 0.7rem; }
+    #arg-grid .ll-arrow { font-size: 0.85rem; margin: 0; line-height: 1; }
+    #arg-grid .ll-arg-card-badge {
+      width: 18px; height: 18px; top: -7px; right: -7px; font-size: 0.7rem; border-width: 1px;
+    }
+    .ll-arg-card-note {
+      margin: 2px 0 0;
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--ll-error);
+    }
+  </style>
+</head>
+<body class="ll-page">
+  <main class="ll-card ll-card--wide">
+    <p class="ll-eyebrow">Deutsch · Argumentieren</p>
+    <h1>Ein Standpunkt – viele Argumente</h1>
+    <p class="ll-intro">Nicht jedes Argument passt zum Standpunkt – und nicht jedes passende Argument ist gleich stark. Wähle die Argumente aus, die den Standpunkt am besten stützen. Zu jedem Argument gehört ein Beispiel.</p>
+
+    <div class="standpunkt-wrap">
+      <div class="ll-box ll-box--standpunkt">
+        <p class="ll-box-title">Standpunkt</p>
+        <p class="ll-box-text">KI sollte im Unterricht verboten werden.</p>
+      </div>
+      <div class="ll-arrow" aria-hidden="true">↓</div>
+    </div>
+
+    <section aria-labelledby="arg-heading">
+      <h2 id="arg-heading" class="ll-visually-hidden">Argumente auswählen</h2>
+      <div class="ll-grid" id="arg-grid"></div>
+    </section>
+
+    <div class="ll-actions">
+      <button class="ll-btn" id="check-button" type="button" disabled>Auswahl prüfen</button>
+      <button class="ll-btn ll-btn--ghost" id="restart-button" type="button" hidden>Nochmal</button>
+    </div>
+    <p class="ll-feedback" id="feedback" role="status" aria-live="polite"></p>
+
+    <div class="ll-progress" style="margin-top: 28px;">
+      <span>Wie stark wird der Standpunkt gestützt?</span>
+      <span id="strength-label">0%</span>
+    </div>
+    <div class="ll-progress-bar" aria-hidden="true"><span id="strength-fill"></span></div>
+  </main>
+
+  <script>
+    const candidates = [
+      {
+        argument: "KI-Programme können ganze Hausaufgaben und Aufsätze fehlerfrei erstellen, ohne dass Schülerinnen und Schüler selbst etwas lernen.",
+        beispiel: "Eine Schülerin lässt einen Aufsatz komplett von einer KI schreiben und gibt ihn als eigene Leistung ab, obwohl sie den Inhalt gar nicht verstanden hat.",
+        passend: true, stark: true
+      },
+      {
+        argument: "Wenn KI ständig Antworten liefert, verlernen Schülerinnen und Schüler, selbstständig Probleme zu lösen und kritisch zu denken.",
+        beispiel: "Ein Schüler kann eine Matheaufgabe nur noch lösen, wenn er sie vorher in eine KI-App eingibt.",
+        passend: true, stark: true
+      },
+      {
+        argument: "KI-Nutzung verbraucht Strom, was schlecht für die Umwelt ist.",
+        beispiel: "Ein Rechenzentrum, das KI-Anfragen bearbeitet, benötigt sehr viel Energie.",
+        passend: true, stark: false,
+        grund: "Schwaches Argument: Das betrifft die Umwelt, nicht das Lernen im Unterricht."
+      },
+      {
+        argument: "Manche Lehrkräfte kennen sich mit KI noch nicht gut aus.",
+        beispiel: "Ein Lehrer merkt nicht, dass ein Text komplett von einer KI geschrieben wurde.",
+        passend: true, stark: false,
+        grund: "Schwaches Argument: Das ist ein Problem der Lehrkräfte, nicht der Schülerinnen und Schüler."
+      },
+      {
+        argument: "KI kann beim Lernen helfen, indem sie Erklärungen individuell anpasst.",
+        beispiel: "Eine KI erklärt einem Schüler eine Matheaufgabe so lange auf unterschiedliche Weise, bis er sie versteht.",
+        passend: false, stark: false,
+        grund: "Passt nicht: Das spricht für KI im Unterricht, nicht gegen sie."
+      },
+      {
+        argument: "Viele Jugendliche nutzen Smartphones in ihrer Freizeit.",
+        beispiel: "Ein Schüler schaut in der Pause Videos auf seinem Handy.",
+        passend: false, stark: false,
+        grund: "Passt nicht: Hat nichts mit KI im Unterricht zu tun."
+      }
+    ];
+
+    const maxWeight = candidates
+      .filter(c => c.passend)
+      .reduce((sum, c) => sum + (c.stark ? 2 : 1), 0);
+
+    const grid = document.querySelector("#arg-grid");
+    const checkButton = document.querySelector("#check-button");
+    const restartButton = document.querySelector("#restart-button");
+    const feedback = document.querySelector("#feedback");
+    const strengthLabel = document.querySelector("#strength-label");
+    const strengthFill = document.querySelector("#strength-fill");
+
+    let order = [];
+    let selected = new Set();
+    let checked = false;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function render() {
+      grid.innerHTML = "";
+      order.forEach(index => {
+        const c = candidates[index];
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "ll-arg-card";
+        card.innerHTML = `
+          <span class="ll-arg-card-badge" aria-hidden="true">✓</span>
+          <span class="ll-box ll-box--argument">
+            <span class="ll-box-title">Argument</span>
+            <span class="ll-box-text">${c.argument}</span>
+          </span>
+          <span class="ll-arrow" aria-hidden="true">↓</span>
+          <span class="ll-box ll-box--beispiel">
+            <span class="ll-box-title">Beispiel</span>
+            <span class="ll-box-text">${c.beispiel}</span>
+          </span>
+          <span class="ll-arg-card-note" hidden></span>
+        `;
+        card.addEventListener("click", () => toggle(index, card));
+        grid.appendChild(card);
+      });
+    }
+
+    function toggle(index, card) {
+      if (checked) return;
+      if (selected.has(index)) {
+        selected.delete(index);
+        card.classList.remove("is-selected");
+      } else {
+        selected.add(index);
+        card.classList.add("is-selected");
+      }
+      checkButton.disabled = selected.size === 0;
+    }
+
+    function updateStrength() {
+      let sum = 0;
+      selected.forEach(index => {
+        const c = candidates[index];
+        if (c.passend) sum += c.stark ? 2 : 1;
+      });
+      const pct = Math.round((sum / maxWeight) * 100);
+      strengthFill.style.width = `${pct}%`;
+      strengthLabel.textContent = `${pct}%`;
+      return pct;
+    }
+
+    function checkAnswers() {
+      checked = true;
+      const pct = updateStrength();
+      const cards = [...grid.children];
+      let wrongCount = 0;
+      let missedCount = 0;
+
+      order.forEach((index, position) => {
+        const c = candidates[index];
+        const card = cards[position];
+        card.disabled = true;
+        const isSelected = selected.has(index);
+        const note = card.querySelector(".ll-arg-card-note");
+
+        if (isSelected && c.passend && c.stark) {
+          card.classList.add("is-correct");
+        } else if (isSelected && c.passend && !c.stark) {
+          card.classList.add("is-correct");
+          note.textContent = c.grund;
+          note.hidden = false;
+        } else if (isSelected && !c.passend) {
+          card.classList.add("is-incorrect");
+          card.querySelector(".ll-arg-card-badge").textContent = "✗";
+          note.textContent = c.grund;
+          note.hidden = false;
+          wrongCount++;
+        } else if (!isSelected && c.passend) {
+          card.classList.add("is-missed");
+          missedCount++;
+        }
+      });
+
+      let message = `Deine Argumentation stützt den Standpunkt zu ${pct}%.`;
+      if (wrongCount > 0) {
+        message += ` ${wrongCount} ${wrongCount === 1 ? "Argument passt" : "Argumente passen"} nicht zum Standpunkt.`;
+      }
+      if (missedCount > 0) {
+        message += ` Es gäbe noch ${missedCount} weitere passende ${missedCount === 1 ? "Argument" : "Argumente"} (gestrichelt markiert).`;
+      }
+      if (wrongCount === 0 && missedCount === 0) {
+        message += " Sehr überzeugend!";
+      }
+
+      feedback.textContent = message;
+      feedback.className = wrongCount === 0 ? "ll-feedback is-success" : "ll-feedback is-error";
+      checkButton.hidden = true;
+      restartButton.hidden = false;
+    }
+
+    function restart() {
+      checked = false;
+      selected = new Set();
+      order = shuffle(candidates.map((_, i) => i));
+      checkButton.hidden = false;
+      checkButton.disabled = true;
+      restartButton.hidden = true;
+      feedback.textContent = "";
+      feedback.className = "ll-feedback";
+      updateStrength();
+      render();
+    }
+
+    checkButton.addEventListener("click", checkAnswers);
+    restartButton.addEventListener("click", restart);
+    restart();
+  </script>
+</body>
+</html>
