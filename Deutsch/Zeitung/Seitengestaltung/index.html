@@ -5,12 +5,470 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seitengestaltung | Lernland</title>
   <link rel="stylesheet" href="../../../lernland.css">
+  <style>
+    .np-masthead {
+      text-align: center;
+      padding: 4px 0 14px;
+      margin-bottom: 18px;
+      border-bottom: 4px double var(--ll-ink);
+    }
+    .np-masthead-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      letter-spacing: 0.02em;
+    }
+    .np-masthead-meta {
+      margin-top: 4px;
+      font-size: 0.72rem;
+      color: var(--ll-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    #np-page {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+    .np-slot {
+      border: var(--ll-border-width) dashed var(--ll-line-soft);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+    }
+    .np-slot[data-slot-id="auf"] { grid-column: 1 / 7; min-height: 170px; }
+    .np-slot[data-slot-id="mg1"] { grid-column: 1 / 4; min-height: 120px; }
+    .np-slot[data-slot-id="mg2"] { grid-column: 4 / 7; min-height: 120px; }
+    .np-slot[data-slot-id="k1"] { grid-column: 1 / 3; min-height: 90px; }
+    .np-slot[data-slot-id="k2"] { grid-column: 3 / 5; min-height: 90px; }
+    .np-slot[data-slot-id="k3"] { grid-column: 5 / 7; min-height: 90px; }
+    .np-slot.is-empty { border-color: var(--ll-error); }
+
+    .np-slot[data-size="aufmacher"] .np-card-title { font-family: Georgia, serif; font-size: 1.5rem; line-height: 1.15; }
+    .np-slot[data-size="aufmacher"] .np-card-teaser { font-size: 0.95rem; }
+    .np-slot[data-size="mittelgross"] .np-card-title { font-family: Georgia, serif; font-size: 1.1rem; }
+    .np-slot[data-size="klein"] .np-card-title { font-size: 0.85rem; }
+    .np-slot[data-size="klein"] .np-card-teaser { font-size: 0.72rem; }
+
+    .np-slot-placeholder {
+      margin: auto;
+      color: var(--ll-muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .np-footer-bar {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      padding-top: 8px;
+      border-top: 3px double var(--ll-ink);
+      font-size: 0.78rem;
+      color: var(--ll-muted);
+    }
+    .np-footer-item {
+      padding: 2px 14px;
+      border-right: 1px solid var(--ll-line-soft);
+    }
+    .np-footer-item:last-child { border-right: none; }
+
+    #np-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px;
+      background: var(--ll-line-soft);
+      border-radius: 10px;
+      min-height: 60px;
+      margin-top: 20px;
+    }
+    #np-pool .np-card { width: 200px; }
+
+    .np-card {
+      flex: 1 1 auto;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-ink);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      width: 100%;
+    }
+    .np-card--dragging { opacity: 0.25; }
+    .np-card--ghost {
+      position: fixed;
+      z-index: 999;
+      pointer-events: none;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      transform: rotate(-1deg);
+    }
+    .np-card-title {
+      margin: 0 0 4px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      line-height: 1.2;
+    }
+    .np-card-teaser {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.25;
+      color: var(--ll-muted);
+    }
+    .np-card-note {
+      display: block;
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .np-card.is-correct { border-color: var(--ll-success); }
+    .np-card.is-correct .np-card-note { color: var(--ll-success); }
+    .np-card.is-wrong, .np-card.is-missed { border-color: var(--ll-error); }
+    .np-card.is-wrong .np-card-note, .np-card.is-missed .np-card-note { color: var(--ll-error); }
+  </style>
 </head>
 <body class="ll-page">
-  <main class="ll-card">
+  <main class="ll-card ll-card--wide">
     <p class="ll-eyebrow">Deutsch · Zeitung</p>
-    <h1>Seitengestaltung</h1>
-    <p class="ll-intro">Hier entsteht die Übung zur Seitengestaltung einer Zeitung.</p>
+    <h1>Die Titelseite gestalten</h1>
+    <p class="ll-intro">Nicht jede Nachricht verdient denselben Platz. Ziehe die Artikel aus dem Pool auf die Titelseite – große Plätze für wichtige Nachrichten, kleine für Randnotizen. Manche Artikel passen gar nicht auf die Seite.</p>
+
+    <div class="np-masthead">
+      <div class="np-masthead-title">Regionale Nachrichten</div>
+      <div class="np-masthead-meta">Ausgabe · Heute · 1,50 €</div>
+    </div>
+
+    <section aria-labelledby="page-heading">
+      <h2 id="page-heading" class="ll-visually-hidden">Titelseite</h2>
+      <div id="np-page">
+        <div class="np-slot" data-slot-id="auf" data-size="aufmacher"></div>
+        <div class="np-slot" data-slot-id="mg1" data-size="mittelgross"></div>
+        <div class="np-slot" data-slot-id="mg2" data-size="mittelgross"></div>
+        <div class="np-slot" data-slot-id="k1" data-size="klein"></div>
+        <div class="np-slot" data-slot-id="k2" data-size="klein"></div>
+        <div class="np-slot" data-slot-id="k3" data-size="klein"></div>
+      </div>
+    </section>
+
+    <div class="np-footer-bar">
+      <span class="np-footer-item">Wetter: 19 °C, leicht bewölkt</span>
+      <span class="np-footer-item">TV-Tipp: Der Alte, 20:15 Uhr</span>
+      <span class="np-footer-item">Rätsel &amp; Sudoku – Seite 14</span>
+    </div>
+
+    <section aria-labelledby="pool-heading">
+      <h2 id="pool-heading" class="ll-visually-hidden">Artikel-Pool</h2>
+      <div id="np-pool"></div>
+    </section>
+
+    <div class="ll-actions" style="margin-top: 20px;">
+      <button class="ll-btn" id="check-button" type="button" disabled>Titelseite prüfen</button>
+      <button class="ll-btn ll-btn--ghost" id="restart-button" type="button" hidden>Nochmal</button>
+    </div>
+    <p class="ll-feedback" id="feedback" role="status" aria-live="polite"></p>
+
+    <div class="ll-progress" style="margin-top: 28px;">
+      <span>Wie gut ist die Titelseite gestaltet?</span>
+      <span id="strength-label">0%</span>
+    </div>
+    <div class="ll-progress-bar" aria-hidden="true"><span id="strength-fill"></span></div>
   </main>
+
+  <script>
+    const articles = [
+      {
+        id: "brand",
+        headline: "Großbrand zerstört Möbelfabrik am Stadtrand",
+        teaser: "In der Nacht brannte die Halle vollständig nieder. Verletzte gibt es keine, der Schaden liegt im Millionenbereich.",
+        ideal: "aufmacher",
+        grund: "Ganz aktuell, dramatisch und betrifft die ganze Stadt – das ist der klare Aufmacher."
+      },
+      {
+        id: "wahl",
+        headline: "Neue Bürgermeisterin gewählt",
+        teaser: "Mit knapper Mehrheit setzte sich die Herausforderin durch. Sie tritt ihr Amt im Januar an.",
+        ideal: "mittelgross",
+        grund: "Wichtig für die ganze Stadt, aber weniger dringend als der Brand – mittelgroß, nicht Aufmacher."
+      },
+      {
+        id: "unwetter",
+        headline: "Unwetterwarnung fürs Wochenende",
+        teaser: "Der Wetterdienst warnt vor Starkregen und Sturmböen. Die Stadt rät, lose Gegenstände zu sichern.",
+        ideal: "mittelgross",
+        grund: "Betrifft alle Leserinnen und Leser direkt am Wochenende – verdient einen mittelgroßen Platz."
+      },
+      {
+        id: "sportverein",
+        headline: "Sportverein feiert 100-jähriges Jubiläum",
+        teaser: "Mit einem großen Fest blickt der Verein auf seine Geschichte zurück.",
+        ideal: "klein",
+        grund: "Schöner Lokaltermin, aber ohne große Tragweite – nur ein kleiner Platz."
+      },
+      {
+        id: "konzert",
+        headline: "Bekannter Sänger tritt in der Stadthalle auf",
+        teaser: "Die Tickets für das Konzert im nächsten Monat sind bereits zur Hälfte verkauft.",
+        ideal: "klein",
+        grund: "Prominenz zieht Leser an, ist aber kein hartes Nachrichtenereignis – nur ein kleiner Platz."
+      },
+      {
+        id: "schulfest",
+        headline: "Grundschule feiert Sommerfest",
+        teaser: "Bei schönem Wetter kamen viele Familien zum Fest mit Spielen und Kuchenverkauf.",
+        ideal: "klein",
+        grund: "Nett für die Betroffenen, aber kaum Neuigkeitswert für alle – nur ein kleiner Hinweis."
+      },
+      {
+        id: "studie",
+        headline: "Studie: Handynutzung bei Jugendlichen steigt weiter",
+        teaser: "Eine bundesweite Untersuchung zeigt, dass Jugendliche im Schnitt über vier Stunden täglich am Handy sind.",
+        ideal: "keine",
+        grund: "Interessant, aber ohne Bezug zur eigenen Stadt – gehört nicht auf die Titelseite."
+      },
+      {
+        id: "unfall",
+        headline: "Blechschaden nach Auffahrunfall",
+        teaser: "An einer Kreuzung fuhr ein Auto auf ein anderes auf. Verletzt wurde niemand.",
+        ideal: "keine",
+        grund: "Ein alltägliches Ereignis ohne Verletzte – keine Titelseiten-Nachricht."
+      },
+      {
+        id: "ufo",
+        headline: "Leuchtendes Objekt über dem Rathaus gesichtet",
+        teaser: "Mehrere Zeugen berichten von einem seltsamen Licht am Nachthimmel. Die Polizei vermutet eine Drohne.",
+        ideal: "keine",
+        grund: "Eine unbestätigte Kuriosität ohne echten Nachrichtenwert – nichts für die Titelseite."
+      },
+      {
+        id: "kuerbis",
+        headline: "Hobbygärtner züchtet 90-Kilo-Kürbis",
+        teaser: "Der Riesenkürbis aus dem Kleingarten stellt einen neuen Ortsrekord auf.",
+        ideal: "klein",
+        grund: "Eine nette Kuriosität am Rande – für mehr als einen kleinen Platz reicht es nicht."
+      }
+    ];
+
+    const slotsDef = [
+      { id: "auf", size: "aufmacher", label: "Hauptartikel" },
+      { id: "mg1", size: "mittelgross", label: "Mittelgroß" },
+      { id: "mg2", size: "mittelgross", label: "Mittelgroß" },
+      { id: "k1", size: "klein", label: "Klein" },
+      { id: "k2", size: "klein", label: "Klein" },
+      { id: "k3", size: "klein", label: "Klein" }
+    ];
+
+    const rankOf = { aufmacher: 3, mittelgross: 2, klein: 1, keine: 0 };
+
+    const pageGrid = document.querySelector("#np-page");
+    const poolEl = document.querySelector("#np-pool");
+    const checkButton = document.querySelector("#check-button");
+    const restartButton = document.querySelector("#restart-button");
+    const feedback = document.querySelector("#feedback");
+    const strengthLabel = document.querySelector("#strength-label");
+    const strengthFill = document.querySelector("#strength-fill");
+
+    let placement = {};
+    let pool = [];
+    let checked = false;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function articleById(id) {
+      return articles.find(a => a.id === id);
+    }
+
+    function cardHTML(article) {
+      return `
+        <p class="np-card-title">${article.headline}</p>
+        <p class="np-card-teaser">${article.teaser}</p>
+        <span class="np-card-note" hidden></span>
+      `;
+    }
+
+    function render() {
+      slotsDef.forEach(slot => {
+        const slotEl = pageGrid.querySelector(`[data-slot-id="${slot.id}"]`);
+        slotEl.className = "np-slot";
+        const articleId = placement[slot.id];
+        if (articleId) {
+          const article = articleById(articleId);
+          const card = document.createElement("div");
+          card.className = "np-card";
+          card.dataset.id = article.id;
+          card.innerHTML = cardHTML(article);
+          attachDrag(card, article.id, slot.id);
+          slotEl.innerHTML = "";
+          slotEl.appendChild(card);
+        } else {
+          slotEl.innerHTML = `<p class="np-slot-placeholder">${slot.label}<br>Artikel hierher ziehen</p>`;
+        }
+      });
+
+      poolEl.innerHTML = "";
+      pool.forEach(articleId => {
+        const article = articleById(articleId);
+        const card = document.createElement("div");
+        card.className = "np-card";
+        card.dataset.id = article.id;
+        card.innerHTML = cardHTML(article);
+        attachDrag(card, article.id, null);
+        poolEl.appendChild(card);
+      });
+    }
+
+    function attachDrag(card, articleId, fromSlotId) {
+      card.addEventListener("pointerdown", (e) => {
+        if (checked) return;
+        e.preventDefault();
+        startDrag(e, card, articleId, fromSlotId);
+      });
+    }
+
+    function startDrag(e, card, articleId, fromSlotId) {
+      const rect = card.getBoundingClientRect();
+      const ghost = card.cloneNode(true);
+      ghost.classList.add("np-card--ghost");
+      ghost.style.width = rect.width + "px";
+      ghost.style.left = rect.left + "px";
+      ghost.style.top = rect.top + "px";
+      document.body.appendChild(ghost);
+      card.classList.add("np-card--dragging");
+
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+
+      function move(ev) {
+        ghost.style.left = (ev.clientX - offsetX) + "px";
+        ghost.style.top = (ev.clientY - offsetY) + "px";
+      }
+
+      function up(ev) {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        ghost.remove();
+        card.classList.remove("np-card--dragging");
+
+        const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+        const targetSlotEl = dropEl ? dropEl.closest(".np-slot") : null;
+        handleDrop(articleId, fromSlotId, targetSlotEl ? targetSlotEl.dataset.slotId : null);
+        render();
+        checkButton.disabled = Object.values(placement).every(v => !v);
+      }
+
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up, { once: true });
+    }
+
+    function handleDrop(articleId, fromSlotId, toSlotId) {
+      if (toSlotId) {
+        if (toSlotId === fromSlotId) return;
+        const occupant = placement[toSlotId] || null;
+        placement[toSlotId] = articleId;
+        if (fromSlotId) {
+          placement[fromSlotId] = occupant;
+        } else {
+          pool = pool.filter(id => id !== articleId);
+          if (occupant) pool.push(occupant);
+        }
+      } else if (fromSlotId) {
+        placement[fromSlotId] = null;
+        if (!pool.includes(articleId)) pool.push(articleId);
+      }
+    }
+
+    function updateStrength(pct) {
+      strengthFill.style.width = `${pct}%`;
+      strengthLabel.textContent = `${pct}%`;
+    }
+
+    function checkLayout() {
+      checked = true;
+      let correct = 0, wrong = 0, missed = 0, empty = 0;
+
+      slotsDef.forEach(slot => {
+        const slotEl = pageGrid.querySelector(`[data-slot-id="${slot.id}"]`);
+        const articleId = placement[slot.id];
+        if (!articleId) {
+          slotEl.classList.add("is-empty");
+          empty++;
+          return;
+        }
+        const article = articleById(articleId);
+        const diff = rankOf[article.ideal] - rankOf[slot.size];
+        const card = slotEl.querySelector(".np-card");
+        const note = card.querySelector(".np-card-note");
+        if (article.ideal !== "keine" && Math.abs(diff) <= 1) {
+          card.classList.add("is-correct");
+          correct++;
+        } else {
+          card.classList.add("is-wrong");
+          note.textContent = article.grund;
+          note.hidden = false;
+          wrong++;
+        }
+      });
+
+      pool.forEach(articleId => {
+        const article = articleById(articleId);
+        const card = poolEl.querySelector(`.np-card[data-id="${articleId}"]`);
+        if (article.ideal === "aufmacher" || article.ideal === "mittelgross") {
+          card.classList.add("is-missed");
+          card.querySelector(".np-card-note").textContent = article.grund;
+          card.querySelector(".np-card-note").hidden = false;
+          missed++;
+        } else {
+          card.classList.add("is-correct");
+        }
+      });
+
+      const pct = Math.round((correct / slotsDef.length) * 100);
+      updateStrength(pct);
+
+      let message = `Deine Titelseite passt zu ${pct}% zur Nachrichtenlage.`;
+      if (wrong > 0) {
+        message += ` ${wrong} ${wrong === 1 ? "Artikel passt" : "Artikel passen"} deutlich nicht zur gewählten Größe.`;
+      }
+      if (empty > 0) {
+        message += ` ${empty} ${empty === 1 ? "Platz bleibt" : "Plätze bleiben"} leer.`;
+      }
+      if (missed > 0) {
+        message += ` ${missed} wichtige ${missed === 1 ? "Artikel hat" : "Artikel haben"} keinen Platz gefunden (rot markiert).`;
+      }
+      if (wrong === 0 && empty === 0 && missed === 0) {
+        message += " Eine überzeugende Titelseite!";
+      }
+
+      feedback.textContent = message;
+      feedback.className = (wrong === 0 && missed === 0) ? "ll-feedback is-success" : "ll-feedback is-error";
+      checkButton.hidden = true;
+      restartButton.hidden = false;
+    }
+
+    function restart() {
+      checked = false;
+      placement = {};
+      slotsDef.forEach(slot => { placement[slot.id] = null; });
+      pool = shuffle(articles.map(a => a.id));
+      checkButton.hidden = false;
+      checkButton.disabled = true;
+      restartButton.hidden = true;
+      feedback.textContent = "";
+      feedback.className = "ll-feedback";
+      updateStrength(0);
+      render();
+    }
+
+    checkButton.addEventListener("click", checkLayout);
+    restartButton.addEventListener("click", restart);
+    restart();
+  </script>
 </body>
 </html>
