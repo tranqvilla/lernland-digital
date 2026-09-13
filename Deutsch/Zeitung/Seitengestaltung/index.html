@@ -6,21 +6,27 @@
   <title>Seitengestaltung | Lernland</title>
   <link rel="stylesheet" href="../../../lernland.css">
   <style>
+    .np-sheet {
+      max-width: 620px;
+      margin: 0 auto 22px;
+      padding: 16px 18px 14px;
+      background: var(--ll-paper);
+      border: 5px solid var(--ll-ink);
+    }
+
     .np-masthead {
       text-align: center;
-      padding: 4px 0 14px;
-      margin-bottom: 18px;
+      padding: 2px 0 12px;
+      margin-bottom: 14px;
       border-bottom: 4px double var(--ll-ink);
     }
     .np-masthead-title {
-      font-family: Georgia, "Times New Roman", serif;
       font-weight: 700;
-      font-size: clamp(1.6rem, 5vw, 2.4rem);
-      letter-spacing: 0.02em;
+      font-size: clamp(1.6rem, 6vw, 2.5rem);
     }
     .np-masthead-meta {
       margin-top: 4px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--ll-muted);
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -29,27 +35,42 @@
     #np-page {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
+      gap: 12px;
     }
     .np-slot {
-      border: var(--ll-border-width) dashed var(--ll-line-soft);
-      border-radius: 10px;
+      border: 2px dashed var(--ll-line-soft);
       padding: 8px;
       display: flex;
     }
-    .np-slot[data-slot-id="auf"] { grid-column: 1 / 7; min-height: 170px; }
-    .np-slot[data-slot-id="mg1"] { grid-column: 1 / 4; min-height: 120px; }
-    .np-slot[data-slot-id="mg2"] { grid-column: 4 / 7; min-height: 120px; }
-    .np-slot[data-slot-id="k1"] { grid-column: 1 / 3; min-height: 90px; }
-    .np-slot[data-slot-id="k2"] { grid-column: 3 / 5; min-height: 90px; }
-    .np-slot[data-slot-id="k3"] { grid-column: 5 / 7; min-height: 90px; }
+    .np-slot.has-card { border-style: solid; }
+    .np-slot[data-slot-id="auf"] { grid-column: 1 / 7; min-height: 190px; }
+    .np-slot[data-slot-id="mg1"] { grid-column: 1 / 4; min-height: 130px; border-right: 1px solid var(--ll-line-soft); }
+    .np-slot[data-slot-id="mg2"] { grid-column: 4 / 7; min-height: 130px; }
+    .np-slot[data-slot-id="k1"] { grid-column: 1 / 3; min-height: 100px; border-right: 1px solid var(--ll-line-soft); }
+    .np-slot[data-slot-id="k2"] { grid-column: 3 / 5; min-height: 100px; border-right: 1px solid var(--ll-line-soft); }
+    .np-slot[data-slot-id="k3"] { grid-column: 5 / 7; min-height: 100px; }
     .np-slot.is-empty { border-color: var(--ll-error); }
 
-    .np-slot[data-size="aufmacher"] .np-card-title { font-family: Georgia, serif; font-size: 1.5rem; line-height: 1.15; }
-    .np-slot[data-size="aufmacher"] .np-card-teaser { font-size: 0.95rem; }
-    .np-slot[data-size="mittelgross"] .np-card-title { font-family: Georgia, serif; font-size: 1.1rem; }
-    .np-slot[data-size="klein"] .np-card-title { font-size: 0.85rem; }
-    .np-slot[data-size="klein"] .np-card-teaser { font-size: 0.72rem; }
+    .np-slot[data-size="aufmacher"] .np-card-title {
+      font-weight: 700;
+      font-size: 1.7rem;
+      line-height: 1.15;
+      color: var(--ll-ink);
+    }
+    .np-slot[data-size="aufmacher"] .np-card-teaser { font-size: 0.95rem; line-height: 1.45; }
+
+    .np-slot[data-size="mittelgross"] .np-card-title {
+      font-weight: 700;
+      font-size: 1.2rem;
+      line-height: 1.15;
+      border-bottom: 2px solid var(--ll-ink);
+      padding-bottom: 3px;
+      display: inline-block;
+    }
+    .np-slot[data-size="mittelgross"] .np-card-teaser { font-size: 0.85rem; line-height: 1.35; }
+
+    .np-slot[data-size="klein"] .np-card-title { font-weight: 700; font-size: 0.85rem; line-height: 1.2; }
+    .np-slot[data-size="klein"] .np-card-teaser { font-size: 0.72rem; line-height: 1.25; }
 
     .np-slot-placeholder {
       margin: auto;
@@ -61,10 +82,10 @@
     .np-footer-bar {
       display: flex;
       flex-wrap: wrap;
-      margin-top: 20px;
+      margin-top: 16px;
       padding-top: 8px;
       border-top: 3px double var(--ll-ink);
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       color: var(--ll-muted);
     }
     .np-footer-item {
@@ -83,7 +104,17 @@
       min-height: 60px;
       margin-top: 20px;
     }
-    #np-pool .np-card { width: 200px; }
+    #np-pool .np-card {
+      width: 200px;
+      min-height: 130px;
+      flex: 0 0 auto;
+    }
+    #np-pool .np-card-teaser {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
 
     .np-card {
       flex: 1 1 auto;
@@ -133,29 +164,31 @@
   <main class="ll-card ll-card--wide">
     <p class="ll-eyebrow">Deutsch · Zeitung</p>
     <h1>Die Titelseite gestalten</h1>
-    <p class="ll-intro">Nicht jede Nachricht verdient denselben Platz. Ziehe die Artikel aus dem Pool auf die Titelseite – große Plätze für wichtige Nachrichten, kleine für Randnotizen. Manche Artikel passen gar nicht auf die Seite.</p>
+    <p class="ll-intro">Nicht jede Nachricht verdient denselben Platz. Ziehe die Artikel aus dem Pool auf die Titelseite – große Plätze für wichtige Nachrichten, kleine für Randnotizen. Der Text wird automatisch länger, je größer der Platz ist. Manche Artikel passen gar nicht auf die Seite.</p>
 
-    <div class="np-masthead">
-      <div class="np-masthead-title">Regionale Nachrichten</div>
-      <div class="np-masthead-meta">Ausgabe · Heute · 1,50 €</div>
-    </div>
-
-    <section aria-labelledby="page-heading">
-      <h2 id="page-heading" class="ll-visually-hidden">Titelseite</h2>
-      <div id="np-page">
-        <div class="np-slot" data-slot-id="auf" data-size="aufmacher"></div>
-        <div class="np-slot" data-slot-id="mg1" data-size="mittelgross"></div>
-        <div class="np-slot" data-slot-id="mg2" data-size="mittelgross"></div>
-        <div class="np-slot" data-slot-id="k1" data-size="klein"></div>
-        <div class="np-slot" data-slot-id="k2" data-size="klein"></div>
-        <div class="np-slot" data-slot-id="k3" data-size="klein"></div>
+    <div class="np-sheet">
+      <div class="np-masthead">
+        <div class="np-masthead-title">Regionale Nachrichten</div>
+        <div class="np-masthead-meta">Ausgabe · Heute · 1,50 €</div>
       </div>
-    </section>
 
-    <div class="np-footer-bar">
-      <span class="np-footer-item">Wetter: 19 °C, leicht bewölkt</span>
-      <span class="np-footer-item">TV-Tipp: Der Alte, 20:15 Uhr</span>
-      <span class="np-footer-item">Rätsel &amp; Sudoku – Seite 14</span>
+      <section aria-labelledby="page-heading">
+        <h2 id="page-heading" class="ll-visually-hidden">Titelseite</h2>
+        <div id="np-page">
+          <div class="np-slot" data-slot-id="auf" data-size="aufmacher"></div>
+          <div class="np-slot" data-slot-id="mg1" data-size="mittelgross"></div>
+          <div class="np-slot" data-slot-id="mg2" data-size="mittelgross"></div>
+          <div class="np-slot" data-slot-id="k1" data-size="klein"></div>
+          <div class="np-slot" data-slot-id="k2" data-size="klein"></div>
+          <div class="np-slot" data-slot-id="k3" data-size="klein"></div>
+        </div>
+      </section>
+
+      <div class="np-footer-bar">
+        <span class="np-footer-item">Wetter: 19 °C, leicht bewölkt</span>
+        <span class="np-footer-item">TV-Tipp: Der Alte, 20:15 Uhr</span>
+        <span class="np-footer-item">Rätsel &amp; Sudoku – Seite 14</span>
+      </div>
     </div>
 
     <section aria-labelledby="pool-heading">
@@ -181,70 +214,99 @@
       {
         id: "brand",
         headline: "Großbrand zerstört Möbelfabrik am Stadtrand",
-        teaser: "In der Nacht brannte die Halle vollständig nieder. Verletzte gibt es keine, der Schaden liegt im Millionenbereich.",
+        text: {
+          aufmacher: "In der Nacht ist die Produktionshalle der Möbelfabrik am Stadtrand vollständig niedergebrannt. Rund 80 Einsatzkräfte der Feuerwehr kämpften mehrere Stunden gegen die Flammen. Verletzte gibt es nach ersten Erkenntnissen nicht, der Sachschaden wird auf mehrere Millionen Euro geschätzt. Die Ursache ist noch unklar, die Kriminalpolizei hat die Ermittlungen aufgenommen.",
+          mittelgross: "In der Nacht brannte die Halle der Möbelfabrik vollständig nieder. Verletzte gibt es keine, der Schaden liegt im Millionenbereich.",
+          klein: "Möbelfabrik brennt nachts vollständig aus, niemand wird verletzt."
+        },
         ideal: "aufmacher",
         grund: "Ganz aktuell, dramatisch und betrifft die ganze Stadt – das ist der klare Aufmacher."
       },
       {
         id: "wahl",
         headline: "Neue Bürgermeisterin gewählt",
-        teaser: "Mit knapper Mehrheit setzte sich die Herausforderin durch. Sie tritt ihr Amt im Januar an.",
+        text: {
+          aufmacher: "Mit einer knappen Mehrheit von 51 Prozent hat sich die parteilose Kandidatin bei der Stichwahl gegen den amtierenden Bürgermeister durchgesetzt. Sie will ihr Amt im Januar antreten und kündigte an, sich vor allem für bezahlbaren Wohnraum einzusetzen. Die Wahlbeteiligung lag bei knapp 54 Prozent.",
+          mittelgross: "Mit knapper Mehrheit setzte sich die Herausforderin durch. Sie tritt ihr Amt im Januar an und will sich für bezahlbaren Wohnraum einsetzen.",
+          klein: "Neue Bürgermeisterin gewählt, Amtsantritt im Januar."
+        },
         ideal: "mittelgross",
         grund: "Wichtig für die ganze Stadt, aber weniger dringend als der Brand – mittelgroß, nicht Aufmacher."
       },
       {
         id: "unwetter",
         headline: "Unwetterwarnung fürs Wochenende",
-        teaser: "Der Wetterdienst warnt vor Starkregen und Sturmböen. Die Stadt rät, lose Gegenstände zu sichern.",
+        text: {
+          aufmacher: "Der Deutsche Wetterdienst warnt für das kommende Wochenende vor schweren Gewittern mit Starkregen und Sturmböen bis Windstärke 9. Die Stadtverwaltung ruft dazu auf, lose Gegenstände von Balkonen und aus Gärten zu entfernen. Auch Sportveranstaltungen im Freien könnten betroffen sein. Die Feuerwehr hat zusätzliche Kräfte in Bereitschaft versetzt.",
+          mittelgross: "Der Wetterdienst warnt vor Starkregen und Sturmböen am Wochenende. Die Stadt rät, lose Gegenstände zu sichern.",
+          klein: "Unwetterwarnung für das Wochenende ausgegeben."
+        },
         ideal: "mittelgross",
         grund: "Betrifft alle Leserinnen und Leser direkt am Wochenende – verdient einen mittelgroßen Platz."
       },
       {
         id: "sportverein",
         headline: "Sportverein feiert 100-jähriges Jubiläum",
-        teaser: "Mit einem großen Fest blickt der Verein auf seine Geschichte zurück.",
+        text: {
+          aufmacher: "Der örtliche Sportverein feiert in diesem Jahr sein 100-jähriges Bestehen. Zum Jubiläum ist am Wochenende ein großes Fest mit Vorführungen aller Abteilungen, einem Ehemaligen-Turnier und einem Festumzug durch die Innenstadt geplant. Der Vorsitzende blickt mit Stolz auf die Vereinsgeschichte zurück und dankt allen ehrenamtlichen Helferinnen und Helfern.",
+          mittelgross: "Der Sportverein feiert sein 100-jähriges Bestehen mit einem großen Fest am Wochenende, inklusive Festumzug.",
+          klein: "Sportverein feiert 100-jähriges Jubiläum mit großem Fest."
+        },
         ideal: "klein",
         grund: "Schöner Lokaltermin, aber ohne große Tragweite – nur ein kleiner Platz."
       },
       {
         id: "konzert",
         headline: "Bekannter Sänger tritt in der Stadthalle auf",
-        teaser: "Die Tickets für das Konzert im nächsten Monat sind bereits zur Hälfte verkauft.",
+        text: {
+          aufmacher: "Ein überregional bekannter Sänger tritt im nächsten Monat in der Stadthalle auf. Die Tickets für das Konzert sind bereits zur Hälfte verkauft, die Veranstalter rechnen mit einem ausverkauften Haus. Für den Abend sind zusätzliche Busse eingerichtet worden, um den Anreiseverkehr zu entzerren.",
+          mittelgross: "Ein bekannter Sänger tritt im nächsten Monat in der Stadthalle auf. Die Tickets sind bereits zur Hälfte verkauft.",
+          klein: "Bekannter Sänger gibt Konzert in der Stadthalle."
+        },
         ideal: "klein",
         grund: "Prominenz zieht Leser an, ist aber kein hartes Nachrichtenereignis – nur ein kleiner Platz."
       },
       {
         id: "schulfest",
         headline: "Grundschule feiert Sommerfest",
-        teaser: "Bei schönem Wetter kamen viele Familien zum Fest mit Spielen und Kuchenverkauf.",
+        text: {
+          aufmacher: "Bei strahlendem Sonnenschein feierte die Grundschule am Samstag ihr traditionelles Sommerfest. Neben zahlreichen Spielständen und einer Hüpfburg sorgten Eltern und Lehrkräfte mit selbstgebackenem Kuchen für das leibliche Wohl. Der Erlös des Festes kommt der Anschaffung neuer Spielgeräte für den Schulhof zugute.",
+          mittelgross: "Bei schönem Wetter feierte die Grundschule ihr Sommerfest mit Spielen und Kuchenverkauf. Der Erlös kommt neuen Spielgeräten zugute.",
+          klein: "Grundschule feiert Sommerfest mit Spielen und Kuchen."
+        },
         ideal: "klein",
         grund: "Nett für die Betroffenen, aber kaum Neuigkeitswert für alle – nur ein kleiner Hinweis."
       },
       {
         id: "studie",
         headline: "Studie: Handynutzung bei Jugendlichen steigt weiter",
-        teaser: "Eine bundesweite Untersuchung zeigt, dass Jugendliche im Schnitt über vier Stunden täglich am Handy sind.",
+        text: {
+          aufmacher: "Eine bundesweite Studie zeigt, dass Jugendliche im Schnitt über vier Stunden täglich am Handy verbringen – deutlich mehr als noch vor fünf Jahren. Expertinnen und Experten warnen vor möglichen Folgen für Schlaf und Konzentration und fordern mehr Aufklärung an Schulen. Die Studie basiert auf einer Befragung von über 3.000 Jugendlichen.",
+          mittelgross: "Eine bundesweite Studie zeigt: Jugendliche sind im Schnitt über vier Stunden täglich am Handy. Fachleute warnen vor Folgen für Schlaf und Konzentration.",
+          klein: "Studie: Handynutzung bei Jugendlichen steigt weiter."
+        },
         ideal: "keine",
         grund: "Interessant, aber ohne Bezug zur eigenen Stadt – gehört nicht auf die Titelseite."
       },
       {
-        id: "unfall",
-        headline: "Blechschaden nach Auffahrunfall",
-        teaser: "An einer Kreuzung fuhr ein Auto auf ein anderes auf. Verletzt wurde niemand.",
-        ideal: "keine",
-        grund: "Ein alltägliches Ereignis ohne Verletzte – keine Titelseiten-Nachricht."
-      },
-      {
         id: "ufo",
         headline: "Leuchtendes Objekt über dem Rathaus gesichtet",
-        teaser: "Mehrere Zeugen berichten von einem seltsamen Licht am Nachthimmel. Die Polizei vermutet eine Drohne.",
+        text: {
+          aufmacher: "Mehrere Anwohnerinnen und Anwohner berichteten in der vergangenen Nacht von einem hell leuchtenden Objekt über dem Rathaus. Die Polizei geht nach ersten Hinweisen davon aus, dass es sich um eine Drohne gehandelt haben könnte. Ermittlungen dazu laufen, Zeugenaussagen widersprechen sich jedoch teilweise.",
+          mittelgross: "Mehrere Zeugen berichten von einem seltsamen Licht am Nachthimmel über dem Rathaus. Die Polizei vermutet eine Drohne.",
+          klein: "Seltsames Licht über dem Rathaus gesichtet."
+        },
         ideal: "keine",
         grund: "Eine unbestätigte Kuriosität ohne echten Nachrichtenwert – nichts für die Titelseite."
       },
       {
         id: "kuerbis",
         headline: "Hobbygärtner züchtet 90-Kilo-Kürbis",
-        teaser: "Der Riesenkürbis aus dem Kleingarten stellt einen neuen Ortsrekord auf.",
+        text: {
+          aufmacher: "Ein Hobbygärtner aus der Kleingartenanlage am Sportplatz hat in diesem Jahr einen neuen Ortsrekord aufgestellt: Sein Kürbis brachte stolze 90 Kilogramm auf die Waage. Monatelang hatte er die Pflanze gehegt und gepflegt, nun will er sie beim Herbstfest der Öffentlichkeit präsentieren.",
+          mittelgross: "Ein Hobbygärtner hat mit seinem 90-Kilo-Kürbis einen neuen Ortsrekord aufgestellt.",
+          klein: "Hobbygärtner züchtet 90-Kilo-Rekordkürbis."
+        },
         ideal: "klein",
         grund: "Eine nette Kuriosität am Rande – für mehr als einen kleinen Platz reicht es nicht."
       }
@@ -285,10 +347,10 @@
       return articles.find(a => a.id === id);
     }
 
-    function cardHTML(article) {
+    function cardHTML(article, size) {
       return `
         <p class="np-card-title">${article.headline}</p>
-        <p class="np-card-teaser">${article.teaser}</p>
+        <p class="np-card-teaser">${article.text[size]}</p>
         <span class="np-card-note" hidden></span>
       `;
     }
@@ -299,11 +361,12 @@
         slotEl.className = "np-slot";
         const articleId = placement[slot.id];
         if (articleId) {
+          slotEl.classList.add("has-card");
           const article = articleById(articleId);
           const card = document.createElement("div");
           card.className = "np-card";
           card.dataset.id = article.id;
-          card.innerHTML = cardHTML(article);
+          card.innerHTML = cardHTML(article, slot.size);
           attachDrag(card, article.id, slot.id);
           slotEl.innerHTML = "";
           slotEl.appendChild(card);
@@ -318,7 +381,7 @@
         const card = document.createElement("div");
         card.className = "np-card";
         card.dataset.id = article.id;
-        card.innerHTML = cardHTML(article);
+        card.innerHTML = cardHTML(article, "klein");
         attachDrag(card, article.id, null);
         poolEl.appendChild(card);
       });
