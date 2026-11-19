@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mausparcours | Lernland</title>
+  <meta name="description" content="Übe Klicken, Doppelklick, Rechtsklick, Verschieben, Markieren und Scrollen – und hol dir deinen Mausführerschein.">
+  <link rel="stylesheet" href="../../lernland.css">
+  <style>
+    :focus-visible { outline: 3px solid var(--ll-accent); outline-offset: 2px; }
+
+    /* Stationsnavigation */
+    .mp-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 28px;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-steps button {
+      padding: 6px 12px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 700 0.85rem var(--ll-font-ui);
+    }
+    .mp-steps button:hover { background: #f6f6f6; }
+    .mp-steps button[aria-current="step"] { color: var(--ll-paper); background: var(--ll-ink); }
+    .mp-steps button.is-done { color: var(--ll-success); background: var(--ll-success-bg); border-color: var(--ll-success); }
+    .mp-steps button.is-done::before { content: "✔ "; }
+    .mp-steps button.is-done[aria-current="step"] { color: var(--ll-paper); background: var(--ll-success); }
+    .mp-steps button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .mp-station { display: none; }
+    .mp-station.is-active { display: block; }
+    .mp-station h2 { margin: 0 0 8px; font-size: 1.375rem; line-height: 1.25; }
+
+    .mp-task {
+      margin: 12px 0 16px;
+      padding: 14px 18px;
+      background: var(--ll-argument-bg);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+
+    .mp-arena {
+      position: relative;
+      min-height: 320px;
+      overflow: hidden;
+      background: #fafafa;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .mp-station .ll-feedback { margin: 14px 0; }
+    .mp-counter { margin: 10px 0 0; color: var(--ll-muted); font: 700 0.9rem var(--ll-font-ui); }
+    .ll-btn[hidden] { display: none; }
+
+    /* Station 1: Klicken */
+    .mp-target {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      padding: 0;
+      border: 4px solid var(--ll-paper);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ff9a73, var(--ll-accent) 60%, #b83a10);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+    .mp-target:active { transform: scale(0.92); }
+
+    /* Station 2 + 3: Ordner und Dateien */
+    .mp-desk {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 28px;
+      padding: 40px 16px;
+    }
+    .mp-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 120px;
+      padding: 10px 6px;
+      color: var(--ll-ink);
+      background: none;
+      border: var(--ll-border-width) solid transparent;
+      border-radius: var(--ll-radius);
+      cursor: default;
+      font: inherit;
+    }
+    .mp-item svg { width: 72px; height: 60px; }
+    .mp-item.is-selected { background: #d4d4d4; border-color: var(--ll-ink); }
+    .mp-item.is-opened { background: var(--ll-success-bg); border-color: var(--ll-success); }
+    .mp-item.is-gone { opacity: 0.25; }
+    .mp-label { font-size: 0.9rem; text-align: center; word-break: break-word; }
+
+    .mp-ctx {
+      position: absolute;
+      z-index: 5;
+      min-width: 170px;
+      margin: 0;
+      padding: 4px;
+      list-style: none;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    }
+    .mp-ctx button {
+      display: block;
+      width: 100%;
+      padding: 6px 12px;
+      color: var(--ll-ink);
+      background: none;
+      border: 0;
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.95rem;
+      text-align: left;
+    }
+    .mp-ctx button:hover, .mp-ctx button:focus { background: #e6e6e6; outline: none; }
+
+    /* Station 4: Verschieben */
+    .mp-arena--auto { min-height: 0; }
+    .mp-tray {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      min-height: 96px;
+      padding: 16px;
+    }
+    .mp-chip {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      cursor: grab;
+      font-size: 1rem;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .mp-chip .mp-emoji { font-size: 1.6rem; line-height: 1; }
+    .mp-chip.is-dragging { z-index: 10; cursor: grabbing; border-color: var(--ll-accent); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); }
+    .mp-baskets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 0 16px 16px;
+    }
+    .mp-basket {
+      min-height: 150px;
+      padding: 10px;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .mp-basket h3 { margin: 0 0 8px; font-size: 1.05rem; text-align: center; }
+    .mp-basket-in { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .mp-basket.is-hover { border-color: var(--ll-accent); background: #fff4ef; }
+    .mp-basket .mp-chip { cursor: default; border-color: var(--ll-success); }
+
+    /* Station 5: Markieren */
+    .mp-text {
+      padding: 22px;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      font-size: 1.3rem;
+      line-height: 1.9;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .mp-text::selection, .mp-text *::selection { color: var(--ll-paper); background: var(--ll-accent); }
+    .mp-checklist { margin: 10px 0 16px; padding: 0; list-style: none; }
+    .mp-checklist li { padding: 4px 0; }
+    .mp-checklist li::before { content: "☐ "; color: var(--ll-muted); }
+    .mp-checklist li.is-done { color: var(--ll-success); }
+    .mp-checklist li.is-done::before { content: "✔ "; color: var(--ll-success); }
+
+    /* Station 6: Scrollen */
+    .mp-scroller {
+      height: 300px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 20px;
+      background: linear-gradient(#f6f6f6, var(--ll-paper));
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .mp-scroller p { margin: 0 0 160px; color: var(--ll-muted); font-size: 1.1rem; text-align: center; }
+    .mp-chest {
+      display: block;
+      margin: 0 auto;
+      padding: 14px 22px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      cursor: pointer;
+      font: 700 1rem var(--ll-font-ui);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .mp-chest:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+    .mp-chest .mp-emoji { display: block; font-size: 2.4rem; }
+
+    /* Start */
+    .mp-hero { text-align: center; }
+    .mp-big { font-size: 3.5rem; line-height: 1.2; }
+    .mp-stationlist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-stationlist li {
+      padding: 12px;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+      font-weight: 700;
+    }
+    .mp-stationlist li span { display: block; font-size: 1.6rem; }
+
+    /* Urkunde */
+    .mp-name-row { margin: 16px 0 24px; }
+    .mp-name-row .ll-input { min-width: 240px; }
+    .mp-cert {
+      margin: 10px 0 18px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--ll-paper);
+      border: 6px double var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .mp-cert h2 { margin: 4px 0 10px; font-size: 2rem; }
+    .mp-cert-name {
+      display: inline-block;
+      min-width: 60%;
+      margin: 8px 0;
+      padding: 0 10px;
+      border-bottom: 2px solid var(--ll-ink);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .mp-cert ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-cert ul li {
+      padding: 4px 12px;
+      color: var(--ll-success);
+      background: var(--ll-success-bg);
+      border: 2px solid var(--ll-success);
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .mp-cert ul li::before { content: "✔ "; }
+
+    .mp-credits {
+      margin: 32px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--ll-line-soft);
+      color: var(--ll-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    @media (max-width: 560px) {
+      .mp-baskets { grid-template-columns: 1fr; }
+      .mp-desk { gap: 12px; padding: 20px 6px; }
+      .mp-name-row .ll-input { min-width: 0; width: 100%; }
+    }
+
+    @media print {
+      .mp-noprint, .mp-station:not(#s-ende) { display: none !important; }
+      #s-ende { display: block !important; }
+      .ll-card { width: 100%; margin: 0; padding: 0; border: 0; }
+      .mp-cert { border-color: #000; }
+    }
+  </style>
+</head>
+<body class="ll-page">
+  <main class="ll-card ll-card--wide">
+    <div class="mp-noprint">
+      <p class="ll-eyebrow">Medienbildung</p>
+      <h1>Mausparcours</h1>
+      <p class="ll-intro">Übe Klicken, Doppelklick, Rechtsklick, Verschieben, Markieren und Scrollen – und hol dir deinen Mausführerschein.</p>
+
+      <div class="ll-progress">
+        <span>Stationen geschafft</span>
+        <span id="progressLabel">0 von 6</span>
+      </div>
+      <div class="ll-progress-bar" aria-hidden="true" style="margin-bottom: 18px;"><span id="progressFill"></span></div>
+
+      <ol class="mp-steps" id="steps" aria-label="Stationen"></ol>
+    </div>
+
+    <!-- Start -->
+    <section class="mp-station is-active" id="s-start" data-title="Start">
+      <div class="mp-hero">
+        <div class="mp-big" aria-hidden="true">🖱️</div>
+        <h2>Hol dir deinen Mausführerschein!</h2>
+        <p>Hier übst du alles, was du mit der Maus können musst. Es gibt sechs Stationen. Wenn du alle geschafft hast, bekommst du eine Urkunde.</p>
+        <ul class="mp-stationlist">
+          <li><span aria-hidden="true">👆</span>Klicken</li>
+          <li><span aria-hidden="true">📂</span>Doppelklick</li>
+          <li><span aria-hidden="true">📋</span>Rechtsklick</li>
+          <li><span aria-hidden="true">🧺</span>Verschieben</li>
+          <li><span aria-hidden="true">🖍️</span>Markieren</li>
+          <li><span aria-hidden="true">🧰</span>Scrollen</li>
+        </ul>
+        <p>Du kannst auch ein Touchpad benutzen.</p>
+        <button class="ll-btn" type="button" data-go="1">Los geht's!</button>
+      </div>
+    </section>
+
+    <!-- 1 Klicken -->
+    <section class="mp-station" id="s-1" data-title="Klicken">
+      <h2>Station 1: Klicken</h2>
+      <div class="mp-task">Klicke mit der <strong>linken Maustaste</strong> auf die orangen Punkte. Ein Klick heißt: einmal kurz drücken und wieder loslassen.</div>
+      <div class="mp-arena" id="clickArena"></div>
+      <p class="mp-counter" id="clickCount">Treffer: 0 von 8</p>
+      <p class="ll-feedback" id="msg1" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="2" hidden>Weiter zu Station 2</button>
+    </section>
+
+    <!-- 2 Doppelklick -->
+    <section class="mp-station" id="s-2" data-title="Doppelklick">
+      <h2>Station 2: Doppelklick</h2>
+      <div class="mp-task">Öffne alle drei Ordner mit einem <strong>Doppelklick</strong>: Klicke zweimal schnell hintereinander mit der linken Maustaste auf den Ordner.</div>
+      <div class="mp-arena"><div class="mp-desk" id="folderDesk"></div></div>
+      <p class="ll-feedback" id="msg2" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="3" hidden>Weiter zu Station 3</button>
+    </section>
+
+    <!-- 3 Rechtsklick -->
+    <section class="mp-station" id="s-3" data-title="Rechtsklick">
+      <h2>Station 3: Rechtsklick und Kontextmenü</h2>
+      <div class="mp-task" id="task3"></div>
+      <div class="mp-arena" id="ctxArena"><div class="mp-desk" id="fileDesk"></div></div>
+      <p class="ll-feedback" id="msg3" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="4" hidden>Weiter zu Station 4</button>
+    </section>
+
+    <!-- 4 Verschieben -->
+    <section class="mp-station" id="s-4" data-title="Verschieben">
+      <h2>Station 4: Verschieben</h2>
+      <div class="mp-task">Bring alles in den richtigen Korb. So geht's: Linke Maustaste auf das Ding, Taste <strong>gedrückt halten</strong>, zum Korb ziehen, loslassen.</div>
+      <div class="mp-arena mp-arena--auto">
+        <div class="mp-tray" id="tray"></div>
+        <div class="mp-baskets">
+          <div class="mp-basket" data-kind="obst"><h3>🧺 Obst</h3><div class="mp-basket-in"></div></div>
+          <div class="mp-basket" data-kind="gemuese"><h3>🧺 Gemüse</h3><div class="mp-basket-in"></div></div>
+        </div>
+      </div>
+      <p class="ll-feedback" id="msg4" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="5" hidden>Weiter zu Station 5</button>
+    </section>
+
+    <!-- 5 Markieren -->
+    <section class="mp-station" id="s-5" data-title="Markieren">
+      <h2>Station 5: Markieren</h2>
+      <div class="mp-task">Markiere Text: Linke Maustaste vor den Anfang setzen, Taste <strong>gedrückt halten</strong>, über den Text ziehen, loslassen.</div>
+      <ul class="mp-checklist" id="markList">
+        <li data-goal="Schatz">Markiere das Wort <strong>Schatz</strong>.</li>
+        <li data-goal="Unter dem alten Apfelbaum gräbt sie ein tiefes Loch">Markiere den ganzen Satz, der mit <strong>Unter</strong> anfängt.</li>
+      </ul>
+      <div class="mp-text" id="markText">Lena packt ihren Rucksack. Sie sucht den Schatz im Garten. Unter dem alten Apfelbaum gräbt sie ein tiefes Loch. Dann hört sie ein leises Klirren.</div>
+      <p class="ll-feedback" id="msg5" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="6" hidden>Weiter zu Station 6</button>
+    </section>
+
+    <!-- 6 Scrollen -->
+    <section class="mp-station" id="s-6" data-title="Scrollen">
+      <h2>Station 6: Scrollen</h2>
+      <div class="mp-task">Ganz unten im Kasten liegt eine Schatztruhe. <strong>Scrolle</strong> nach unten: Dreh das Mausrad zu dir hin. Mit dem Touchpad wischst du mit zwei Fingern.</div>
+      <div class="mp-scroller" id="scroller" tabindex="0" aria-label="Scrollbereich">
+        <p>⬇️ Scroll weiter nach unten!</p>
+        <p>Weiter, weiter …</p>
+        <p>🐟 Hier schwimmt nur ein Fisch.</p>
+        <p>Noch ein Stück!</p>
+        <p>🪸 Fast geschafft …</p>
+        <button class="mp-chest" type="button" id="chest"><span class="mp-emoji" aria-hidden="true">🧰</span>Schatztruhe öffnen</button>
+      </div>
+      <p class="ll-feedback" id="msg6" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="7" hidden>Zur Urkunde</button>
+    </section>
+
+    <!-- Urkunde -->
+    <section class="mp-station" id="s-ende" data-title="Urkunde">
+      <div class="mp-noprint">
+        <h2>Geschafft!</h2>
+        <p>Schreib deinen Namen in das Feld. Dann kannst du deine Urkunde ausdrucken oder als PDF speichern.</p>
+        <div class="ll-actions mp-name-row">
+          <label for="nameIn">Dein Name:</label>
+          <input class="ll-input" type="text" id="nameIn" autocomplete="off" maxlength="40">
+          <button class="ll-btn" type="button" id="printBtn">Urkunde drucken</button>
+        </div>
+      </div>
+      <div class="mp-cert" id="cert">
+        <div class="mp-big" aria-hidden="true">🏅</div>
+        <h2>Mausführerschein</h2>
+        <div>Hiermit wird bestätigt:</div>
+        <div class="mp-cert-name" id="certName">&nbsp;</div>
+        <div>kann die Maus sicher bedienen und hat alle Stationen geschafft:</div>
+        <ul>
+          <li>Klicken</li><li>Doppelklick</li><li>Rechtsklick</li>
+          <li>Verschieben</li><li>Markieren</li><li>Scrollen</li>
+        </ul>
+        <div id="certDate"></div>
+      </div>
+    </section>
+
+    <p class="mp-credits mp-noprint">Mausparcours · Lernland Digital · Jannetje Egbers · Lizenz CC BY-NC-SA 4.0 · ohne Werbung, ohne Anmeldung, es werden keine Daten gespeichert</p>
+  </main>
+
+  <script>
+  (function () {
+    const stations = ['s-start', 's-1', 's-2', 's-3', 's-4', 's-5', 's-6', 's-ende'];
+    const done = new Set();
+    const stepsEl = document.getElementById('steps');
+
+    function renderSteps(cur) {
+      stepsEl.innerHTML = '';
+      stations.forEach((id, i) => {
+        const sec = document.getElementById(id);
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = (i > 0 && i < 7 ? i + ' ' : '') + sec.dataset.title;
+        if (i === cur) b.setAttribute('aria-current', 'step');
+        if (done.has(i)) b.classList.add('is-done');
+        if (i === 7 && done.size < 6) { b.disabled = true; b.title = 'Erst alle Stationen schaffen'; }
+        b.addEventListener('click', () => go(i));
+        li.appendChild(b); stepsEl.appendChild(li);
+      });
+      document.getElementById('progressLabel').textContent = done.size + ' von 6';
+      document.getElementById('progressFill').style.width = (done.size / 6 * 100) + '%';
+    }
+    function go(i) {
+      stations.forEach((id, k) => document.getElementById(id).classList.toggle('is-active', k === i));
+      renderSteps(i);
+      if (i === 1) startClick();
+      if (i === 7) fillCert();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(+b.dataset.go)));
+
+    function finish(n, text) {
+      done.add(n);
+      const sec = document.getElementById('s-' + n);
+      say(n, text, 'ok');
+      const nb = sec.querySelector('[data-go]'); if (nb) nb.hidden = false;
+      renderSteps(n);
+    }
+    function say(n, text, cls) {
+      const m = document.getElementById('msg' + n);
+      m.textContent = text;
+      m.className = 'll-feedback' + (cls === 'ok' ? ' is-success' : cls === 'no' ? ' is-error' : '');
+    }
+
+    /* ---------- 1 Klicken ---------- */
+    const arena = document.getElementById('clickArena');
+    let hits = 0, clickStarted = false;
+    function startClick() {
+      if (clickStarted) return; clickStarted = true; hits = 0; placeTarget();
+    }
+    function placeTarget() {
+      arena.innerHTML = '';
+      if (hits >= 8) { finish(1, 'Super! Du hast alle 8 Punkte getroffen.'); return; }
+      const t = document.createElement('button');
+      t.className = 'mp-target'; t.type = 'button'; t.setAttribute('aria-label', 'Punkt ' + (hits + 1));
+      const w = arena.clientWidth - 72, h = arena.clientHeight - 72;
+      const size = hits < 4 ? 64 : 48;
+      t.style.width = t.style.height = size + 'px';
+      t.style.left = Math.max(4, Math.random() * w) + 'px';
+      t.style.top = Math.max(4, Math.random() * h) + 'px';
+      t.addEventListener('click', e => {
+        e.stopPropagation(); hits++;
+        document.getElementById('clickCount').textContent = 'Treffer: ' + hits + ' von 8';
+        if (hits === 4) say(1, 'Gut! Jetzt werden die Punkte kleiner.', 'ok');
+        placeTarget();
+      });
+      arena.appendChild(t);
+    }
+    arena.addEventListener('click', () => { if (hits < 8) say(1, 'Daneben! Versuch es noch einmal.', 'no'); });
+
+    /* ---------- Icons ---------- */
+    const folderClosed = '<svg viewBox="0 0 72 60" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h18l6 6h32a4 4 0 0 1 4 4v34a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" fill="#ffcc1a" stroke="#000" stroke-width="2.5"/></svg>';
+    const folderOpen = '<svg viewBox="0 0 72 60" aria-hidden="true"><path d="M4 12a4 4 0 0 1 4-4h18l6 6h32a4 4 0 0 1 4 4v6H4z" fill="#e0a800" stroke="#000" stroke-width="2.5"/><rect x="12" y="18" width="46" height="14" fill="#fff" stroke="#000" stroke-width="2"/><path d="M2 26h68l-6 30H8z" fill="#ffd84d" stroke="#000" stroke-width="2.5"/></svg>';
+    const fileIcon = c => '<svg viewBox="0 0 72 60" aria-hidden="true"><path d="M20 2h24l12 12v44H20z" fill="#fff" stroke="#000" stroke-width="2.5"/><path d="M44 2v12h12" fill="none" stroke="#000" stroke-width="2.5"/><rect x="26" y="24" width="24" height="18" rx="2" fill="' + c + '"/></svg>';
+
+    /* ---------- 2 Doppelklick ---------- */
+    const fd = document.getElementById('folderDesk');
+    let opened = 0;
+    ['Fotos', 'Musik', 'Hausaufgaben'].forEach(name => {
+      const it = document.createElement('button');
+      it.type = 'button'; it.className = 'mp-item'; it.innerHTML = folderClosed + '<span class="mp-label">' + name + '</span>';
+      it.addEventListener('click', () => {
+        if (it.classList.contains('is-opened')) return;
+        fd.querySelectorAll('.mp-item.is-selected').forEach(x => x.classList.remove('is-selected'));
+        it.classList.add('is-selected');
+        say(2, 'Das war ein Klick: Der Ordner ist jetzt ausgewählt. Zum Öffnen klickst du zweimal schnell hintereinander.');
+      });
+      it.addEventListener('dblclick', () => {
+        if (it.classList.contains('is-opened')) return;
+        it.classList.remove('is-selected'); it.classList.add('is-opened');
+        it.querySelector('svg').outerHTML = folderOpen;
+        opened++;
+        if (opened === 3) finish(2, 'Klasse! Du hast alle drei Ordner mit einem Doppelklick geöffnet.');
+        else say(2, 'Richtig, der Ordner „' + name + '“ ist offen! Noch ' + (3 - opened) + '.', 'ok');
+      });
+      // Tastatur: Enter öffnet
+      it.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); it.dispatchEvent(new MouseEvent('dblclick')); } });
+      fd.appendChild(it);
+    });
+
+    /* ---------- 3 Rechtsklick ---------- */
+    const ctxArena = document.getElementById('ctxArena');
+    const fileDesk = document.getElementById('fileDesk');
+    const task3 = document.getElementById('task3');
+    const files = [{ name: 'Ferienbild', c: '#4dabf7' }, { name: 'Müll', c: '#adb5bd' }, { name: 'Geschichte', c: '#69db7c' }];
+    const tasks3 = [
+      { file: 'Müll', action: 'Löschen', text: 'Lösche die Datei <strong>Müll</strong>. Mach dafür einen <strong>Rechtsklick</strong> auf die Datei, also einen Klick mit der rechten Maustaste. Dann öffnet sich das Kontextmenü. Wähle dort „Löschen“.' },
+      { file: 'Ferienbild', action: 'Kopieren', text: 'Kopiere die Datei <strong>Ferienbild</strong>. Öffne wieder mit einem <strong>Rechtsklick</strong> das Kontextmenü und wähle „Kopieren“.' }
+    ];
+    let t3 = 0, menu = null;
+    task3.innerHTML = tasks3[0].text;
+    files.forEach(f => {
+      const it = document.createElement('button');
+      it.type = 'button'; it.className = 'mp-item'; it.dataset.name = f.name;
+      it.innerHTML = fileIcon(f.c) + '<span class="mp-label">' + f.name + '</span>';
+      it.addEventListener('click', () => {
+        closeMenu();
+        fileDesk.querySelectorAll('.mp-item.is-selected').forEach(x => x.classList.remove('is-selected'));
+        it.classList.add('is-selected');
+        if (t3 < 2) say(3, 'Das war ein Klick mit der linken Taste. Für das Kontextmenü brauchst du die rechte Maustaste.');
+      });
+      it.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (it.classList.contains('is-gone')) return;
+        openMenu(it, e.clientX, e.clientY);
+      });
+      it.addEventListener('keydown', e => {
+        if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) { e.preventDefault(); const r = it.getBoundingClientRect(); openMenu(it, r.left + 20, r.bottom - 10); }
+      });
+      fileDesk.appendChild(it);
+    });
+    ctxArena.addEventListener('contextmenu', e => { if (!e.target.closest('.mp-item')) e.preventDefault(); });
+    function openMenu(it, x, y) {
+      closeMenu();
+      fileDesk.querySelectorAll('.mp-item.is-selected').forEach(z => z.classList.remove('is-selected'));
+      it.classList.add('is-selected');
+      menu = document.createElement('ul'); menu.className = 'mp-ctx'; menu.setAttribute('role', 'menu');
+      ['Öffnen', 'Kopieren', 'Umbenennen', 'Löschen'].forEach(a => {
+        const li = document.createElement('li'); const b = document.createElement('button');
+        b.type = 'button'; b.textContent = a; b.setAttribute('role', 'menuitem');
+        b.addEventListener('click', ev => { ev.stopPropagation(); choose(it, a); });
+        li.appendChild(b); menu.appendChild(li);
+      });
+      const r = ctxArena.getBoundingClientRect();
+      let left = x - r.left, top = y - r.top;
+      ctxArena.appendChild(menu);
+      left = Math.min(left, r.width - menu.offsetWidth - 6);
+      top = Math.min(top, r.height - menu.offsetHeight - 6);
+      menu.style.left = Math.max(4, left) + 'px'; menu.style.top = Math.max(4, top) + 'px';
+      menu.querySelector('button').focus();
+      if (t3 < 2) say(3, 'Das ist das Kontextmenü. Es zeigt dir, was du mit dieser Datei machen kannst.');
+    }
+    function closeMenu() { if (menu) { menu.remove(); menu = null; } }
+    document.addEventListener('click', e => { if (menu && !menu.contains(e.target)) closeMenu(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+    function choose(it, action) {
+      closeMenu();
+      if (t3 >= 2) return;
+      const want = tasks3[t3];
+      if (it.dataset.name !== want.file) { say(3, 'Das ist die falsche Datei. Gesucht ist „' + want.file + '“.', 'no'); return; }
+      if (action !== want.action) { say(3, 'Du hast „' + action + '“ gewählt. Gesucht ist „' + want.action + '“.', 'no'); return; }
+      if (action === 'Löschen') { it.classList.add('is-gone'); it.classList.remove('is-selected'); it.querySelector('.mp-label').textContent = 'Müll (gelöscht)'; }
+      if (action === 'Kopieren') {
+        const copy = it.cloneNode(true); copy.classList.remove('is-selected'); copy.querySelector('.mp-label').textContent = 'Ferienbild (Kopie)';
+        copy.disabled = true; fileDesk.appendChild(copy);
+      }
+      t3++;
+      if (t3 === 2) { task3.innerHTML = 'Beide Aufgaben erledigt!'; finish(3, 'Prima! Du kannst das Kontextmenü mit einem Rechtsklick öffnen.'); }
+      else { task3.innerHTML = tasks3[t3].text; say(3, 'Richtig, die Datei ist gelöscht! Jetzt kommt die zweite Aufgabe.', 'ok'); }
+    }
+
+    /* ---------- 4 Verschieben ---------- */
+    const tray = document.getElementById('tray');
+    const things = [
+      ['🍎', 'Apfel', 'obst'], ['🥕', 'Möhre', 'gemuese'], ['🍌', 'Banane', 'obst'],
+      ['🥦', 'Brokkoli', 'gemuese'], ['🍓', 'Erdbeere', 'obst'], ['🥒', 'Gurke', 'gemuese']
+    ];
+    let sorted = 0;
+    things.sort(() => Math.random() - 0.5).forEach(([e, n, k]) => {
+      const c = document.createElement('div');
+      c.className = 'mp-chip'; c.dataset.kind = k; c.tabIndex = 0; c.setAttribute('role', 'button');
+      c.setAttribute('aria-label', n + ' – ziehen');
+      c.innerHTML = '<span class="mp-emoji" aria-hidden="true">' + e + '</span>' + n;
+      makeDraggable(c); tray.appendChild(c);
+    });
+    const baskets = [...document.querySelectorAll('.mp-basket')];
+    function basketAt(x, y) { return baskets.find(b => { const r = b.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }); }
+    function makeDraggable(c) {
+      let sx, sy, active = false;
+      c.addEventListener('pointerdown', e => {
+        if (c.closest('.mp-basket')) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        active = true; sx = e.clientX; sy = e.clientY; c.setPointerCapture(e.pointerId); c.classList.add('is-dragging');
+      });
+      c.addEventListener('pointermove', e => {
+        if (!active) return;
+        c.style.transform = 'translate(' + (e.clientX - sx) + 'px,' + (e.clientY - sy) + 'px)';
+        baskets.forEach(b => b.classList.toggle('is-hover', b === basketAt(e.clientX, e.clientY)));
+      });
+      const end = e => {
+        if (!active) return; active = false; c.classList.remove('is-dragging');
+        baskets.forEach(b => b.classList.remove('is-hover'));
+        const b = basketAt(e.clientX, e.clientY);
+        c.style.transform = '';
+        if (!b) { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) < 6) say(4, 'Halte die Taste gedrückt und zieh das Ding zu einem Korb.'); return; }
+        if (b.dataset.kind === c.dataset.kind) {
+          b.querySelector('.mp-basket-in').appendChild(c); c.tabIndex = -1; sorted++;
+          if (sorted === things.length) finish(4, 'Toll! Alles ist im richtigen Korb.');
+          else say(4, 'Richtig! Noch ' + (things.length - sorted) + '.', 'ok');
+        } else say(4, 'Das passt nicht in diesen Korb. Versuch es noch einmal.', 'no');
+      };
+      c.addEventListener('pointerup', end);
+      c.addEventListener('pointercancel', end);
+      // Tastatur-Ersatz: O = Obst, G = Gemüse
+      c.addEventListener('keydown', e => {
+        if (c.closest('.mp-basket')) return;
+        const k = e.key.toLowerCase(); if (k !== 'o' && k !== 'g') return;
+        const b = baskets.find(x => x.dataset.kind === (k === 'o' ? 'obst' : 'gemuese'));
+        const r = b.getBoundingClientRect(); sx = 0; sy = 0; active = true;
+        end({ clientX: r.left + 10, clientY: r.top + 10 });
+      });
+    }
+
+    /* ---------- 5 Markieren ---------- */
+    const markItems = [...document.querySelectorAll('#markList li')];
+    const markText = document.getElementById('markText');
+    let markDone = 0, selTimer = null;
+    const norm = s => s.replace(/\s+/g, ' ').trim().replace(/[.,!?]+$/, '').trim();
+    function checkSel() {
+      const sel = window.getSelection(); if (!sel || sel.rangeCount === 0) return;
+      if (!markText.contains(sel.anchorNode)) return;
+      const txt = norm(sel.toString()); if (!txt) return;
+      const next = markItems.find(li => !li.classList.contains('is-done'));
+      if (!next) return;
+      if (txt === next.dataset.goal) {
+        next.classList.add('is-done'); markDone++;
+        if (markDone === markItems.length) finish(5, 'Perfekt markiert! Tipp: Ein Doppelklick auf ein Wort markiert es auch.');
+        else say(5, 'Richtig! Jetzt der ganze Satz.', 'ok');
+      } else if (txt.length > 1) {
+        say(5, 'Markiert ist: „' + txt + '“. Das passt noch nicht ganz. Versuch es noch einmal.', 'no');
+      }
+    }
+    markText.addEventListener('mouseup', () => setTimeout(checkSel, 10));
+    markText.addEventListener('touchend', () => setTimeout(checkSel, 300));
+    markText.addEventListener('keyup', () => setTimeout(checkSel, 10));
+    document.addEventListener('selectionchange', () => {
+      clearTimeout(selTimer);
+      selTimer = setTimeout(() => { if (document.getElementById('s-5').classList.contains('is-active')) checkSelQuiet(); }, 700);
+    });
+    function checkSelQuiet() {
+      const sel = window.getSelection(); if (!sel || !markText.contains(sel.anchorNode)) return;
+      const txt = norm(sel.toString());
+      const next = markItems.find(li => !li.classList.contains('is-done'));
+      if (next && txt === next.dataset.goal) checkSel();
+    }
+
+    /* ---------- 6 Scrollen ---------- */
+    document.getElementById('chest').addEventListener('click', e => {
+      if (done.has(6)) return;
+      e.currentTarget.innerHTML = '<span class="mp-emoji" aria-hidden="true">💎</span>Du hast den Schatz gefunden!';
+      finish(6, 'Super gescrollt! Du hast den Schatz gefunden.');
+    });
+
+    /* ---------- Urkunde ---------- */
+    const nameIn = document.getElementById('nameIn');
+    function fillCert() {
+      const d = new Date();
+      document.getElementById('certDate').textContent = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('certName').textContent = nameIn.value.trim() || ' ';
+    }
+    nameIn.addEventListener('input', fillCert);
+    document.getElementById('printBtn').addEventListener('click', () => { fillCert(); window.print(); });
+
+    renderSteps(0);
+  })();
+  </script>
+</body>
+</html>
