@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tastaturparcours | Lernland</title>
+  <meta name="description" content="Übe Wörter, Großbuchstaben, Sonderzeichen, Korrigieren und die Feststelltaste – und hol dir deinen Tastaturführerschein.">
+  <link rel="stylesheet" href="../../lernland.css">
+  <style>
+    :focus-visible { outline: 3px solid var(--ll-accent); outline-offset: 2px; }
+
+    /* Stationsnavigation (wie Mausparcours) */
+    .mp-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 28px;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-steps button {
+      padding: 6px 12px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 700 0.85rem var(--ll-font-ui);
+    }
+    .mp-steps button:hover { background: #f6f6f6; }
+    .mp-steps button[aria-current="step"] { color: var(--ll-paper); background: var(--ll-ink); }
+    .mp-steps button.is-done { color: var(--ll-success); background: var(--ll-success-bg); border-color: var(--ll-success); }
+    .mp-steps button.is-done::before { content: "✔ "; }
+    .mp-steps button.is-done[aria-current="step"] { color: var(--ll-paper); background: var(--ll-success); }
+    .mp-steps button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .mp-station { display: none; }
+    .mp-station.is-active { display: block; }
+    .mp-station h2 { margin: 0 0 8px; font-size: 1.375rem; line-height: 1.25; }
+
+    .mp-task {
+      margin: 12px 0 16px;
+      padding: 14px 18px;
+      background: var(--ll-argument-bg);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+
+    .mp-station .ll-feedback { margin: 14px 0; }
+    .mp-counter { margin: 10px 0 0; color: var(--ll-muted); font: 700 0.9rem var(--ll-font-ui); }
+    .ll-btn[hidden] { display: none; }
+
+    /* Tastaturparcours: Vorlage und Eingabe */
+    .tp-mono { font-family: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", "Liberation Mono", "Courier New", monospace; }
+    .tp-target {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+      margin: 0 0 16px;
+      padding: 22px 12px;
+      background: #fff8d6;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      font-size: clamp(1.7rem, 7vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .tp-ch {
+      display: inline-block;
+      min-width: 0.7em;
+      padding: 2px 3px;
+      text-align: center;
+      border-bottom: 4px solid transparent;
+      border-radius: 4px;
+    }
+    .tp-ch.is-space { min-width: 0.6em; }
+    .tp-ch.is-ok { color: var(--ll-success); background: var(--ll-success-bg); }
+    .tp-ch.is-bad { color: var(--ll-paper); background: var(--ll-error); }
+    .tp-ch.is-extra { color: var(--ll-paper); background: var(--ll-error); text-decoration: line-through; }
+    .tp-ch.is-next { border-bottom-color: var(--ll-accent); }
+    .tp-ch.is-first-bad { outline: 4px solid var(--ll-error); outline-offset: 2px; }
+    .tp-big { font-size: clamp(4rem, 18vw, 6rem); padding: 10px 12px; }
+
+    .tp-label { display: block; margin: 0 0 6px; font-weight: 700; }
+    .tp-in {
+      display: block;
+      width: 100%;
+      max-width: 520px;
+      font-size: 1.6rem;
+      background: var(--ll-paper);
+    }
+    .tp-in--small { max-width: 160px; text-align: center; font-size: 2rem; }
+    textarea.tp-in { max-width: none; min-height: 110px; resize: vertical; line-height: 1.5; }
+    .tp-in.is-ok { border-color: var(--ll-success); background: var(--ll-success-bg); }
+
+    .tp-keys { margin: 8px 0 0; color: var(--ll-muted); font-size: 1rem; }
+    kbd {
+      display: inline-block;
+      min-width: 1.8em;
+      padding: 1px 7px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: 2px solid var(--ll-ink);
+      border-bottom-width: 4px;
+      border-radius: 6px;
+      font: 700 0.95em var(--ll-font-ui);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .mp-checklist { margin: 10px 0 16px; padding: 0; list-style: none; }
+    .mp-checklist li { padding: 4px 0; }
+    .mp-checklist li::before { content: "☐ "; color: var(--ll-muted); }
+    .mp-checklist li.is-done { color: var(--ll-success); }
+    .mp-checklist li.is-done::before { content: "✔ "; color: var(--ll-success); }
+
+    /* Warnung Feststelltaste */
+    .tp-caps {
+      position: fixed;
+      z-index: 20;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 32px);
+      padding: 12px 20px;
+      color: var(--ll-ink);
+      background: #ffd400;
+      border: var(--ll-border-width) solid var(--ll-ink);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      font: 700 1.2rem var(--ll-font-ui);
+      text-align: center;
+    }
+    .tp-caps[hidden] { display: none; }
+
+    /* Start */
+    .mp-hero { text-align: center; }
+    .mp-big { font-size: 3.5rem; line-height: 1.2; }
+    .mp-stationlist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-stationlist li {
+      padding: 12px;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+      font-weight: 700;
+    }
+    .mp-stationlist li span { display: block; font-size: 1.6rem; }
+
+    /* Urkunde */
+    .mp-name-row { margin: 16px 0 24px; }
+    .mp-name-row .ll-input { min-width: 240px; }
+    .mp-cert {
+      margin: 10px 0 18px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--ll-paper);
+      border: 6px double var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .mp-cert h2 { margin: 4px 0 10px; font-size: clamp(1.3rem, 6vw, 2rem); overflow-wrap: anywhere; }
+    .mp-cert-name {
+      display: inline-block;
+      min-width: 60%;
+      margin: 8px 0;
+      padding: 0 10px;
+      border-bottom: 2px solid var(--ll-ink);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .mp-cert ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .mp-cert ul li {
+      padding: 4px 12px;
+      color: var(--ll-success);
+      background: var(--ll-success-bg);
+      border: 2px solid var(--ll-success);
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .mp-cert ul li::before { content: "✔ "; }
+
+    .mp-credits {
+      margin: 32px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--ll-line-soft);
+      color: var(--ll-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    @media (max-width: 560px) {
+      .mp-name-row .ll-input { min-width: 0; width: 100%; }
+      .mp-task { padding: 12px 14px; }
+      .tp-target { padding: 16px 6px; gap: 2px; }
+    }
+
+    @media print {
+      .mp-noprint, .tp-caps, .mp-station:not(#s-ende) { display: none !important; }
+      #s-ende { display: block !important; }
+      .ll-card { width: 100%; margin: 0; padding: 0; border: 0; }
+      .mp-cert { border-color: #000; }
+    }
+  </style>
+</head>
+<body class="ll-page">
+  <div class="tp-caps" id="capsWarn" role="alert" hidden>⇪ Achtung, Feststelltaste ⇪ ist an!</div>
+
+  <main class="ll-card ll-card--wide">
+    <div class="mp-noprint">
+      <p class="ll-eyebrow">Medienbildung</p>
+      <h1>Tastaturparcours</h1>
+      <p class="ll-intro">Übe Wörter, Großbuchstaben, Sonderzeichen, Korrigieren und die Feststelltaste – und hol dir deinen Tastaturführerschein.</p>
+
+      <div class="ll-progress">
+        <span>Stationen geschafft</span>
+        <span id="progressLabel">0 von 7</span>
+      </div>
+      <div class="ll-progress-bar" aria-hidden="true" style="margin-bottom: 18px;"><span id="progressFill"></span></div>
+
+      <ol class="mp-steps" id="steps" aria-label="Stationen"></ol>
+    </div>
+
+    <!-- Start -->
+    <section class="mp-station is-active" id="s-start" data-title="Start">
+      <div class="mp-hero">
+        <div class="mp-big" aria-hidden="true">⌨️</div>
+        <h2>Hol dir deinen Tastaturführerschein!</h2>
+        <p>Hier übst du alles, was du mit der Tastatur können musst. Es gibt sieben Stationen. Wenn du alle geschafft hast, bekommst du eine Urkunde.</p>
+        <ul class="mp-stationlist">
+          <li><span aria-hidden="true">🔤</span>Wörter</li>
+          <li><span aria-hidden="true">🅰️</span>Großbuchstaben</li>
+          <li><span aria-hidden="true">❗</span>Zeichen oben</li>
+          <li><span aria-hidden="true">📧</span>Zeichen @ und €</li>
+          <li><span aria-hidden="true">✏️</span>Korrigieren</li>
+          <li><span aria-hidden="true">⇪</span>Feststelltaste</li>
+          <li><span aria-hidden="true">🔐</span>Passwort-Boss</li>
+        </ul>
+        <p>Du kannst auch die Bildschirmtastatur auf dem Tablet benutzen.</p>
+        <button class="ll-btn" type="button" data-go="1">Los geht's!</button>
+      </div>
+    </section>
+
+    <!-- 1 Wörter -->
+    <section class="mp-station" id="s-1" data-title="Wörter">
+      <h2>Station 1: Wörter tippen</h2>
+      <div class="mp-task">Tippe das Wort im gelben Kasten genau ab. Jeder Buchstabe wird sofort <strong>grün</strong>, wenn er stimmt, und <strong>rot</strong>, wenn er falsch ist. Einen falschen Buchstaben löschst du mit der Rücktaste <kbd>⟵</kbd>.</div>
+      <div class="tp-target tp-mono" id="t1" aria-hidden="true"></div>
+      <label class="tp-label" for="in1">Hier tippen:</label>
+      <input class="ll-input tp-in tp-mono" type="text" id="in1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <p class="mp-counter" id="c1"></p>
+      <p class="ll-feedback" id="msg1" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="2" hidden>Weiter zu Station 2</button>
+    </section>
+
+    <!-- 2 Großbuchstaben -->
+    <section class="mp-station" id="s-2" data-title="Großbuchstaben">
+      <h2>Station 2: Großbuchstaben</h2>
+      <div class="mp-task">Namen und Nomen schreibst du mit einem großen Anfangsbuchstaben. Für einen Großbuchstaben hältst du die Umschalttaste <kbd>⇧</kbd> gedrückt und drückst dann den Buchstaben. Tippe die Wörter genau ab.</div>
+      <div class="tp-target tp-mono" id="t2" aria-hidden="true"></div>
+      <label class="tp-label" for="in2">Hier tippen:</label>
+      <input class="ll-input tp-in tp-mono" type="text" id="in2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <p class="mp-counter" id="c2"></p>
+      <p class="ll-feedback" id="msg2" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="3" hidden>Weiter zu Station 3</button>
+    </section>
+
+    <!-- 3 Zeichen oben -->
+    <section class="mp-station" id="s-3" data-title="Zeichen oben">
+      <h2>Station 3: Zeichen oben auf der Taste</h2>
+      <div class="mp-task">Auf manchen Tasten stehen zwei Zeichen. Das Zeichen steht oben auf der Taste. Du brauchst die Umschalttaste <kbd>⇧</kbd>. Tippe das Zeichen im gelben Kasten.</div>
+      <div class="tp-target tp-big tp-mono" id="t3" aria-hidden="true"></div>
+      <label class="tp-label" for="in3">Hier tippen:</label>
+      <input class="ll-input tp-in tp-in--small tp-mono" type="text" id="in3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <p class="tp-keys" id="k3"></p>
+      <p class="mp-counter" id="c3"></p>
+      <p class="ll-feedback" id="msg3" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="4" hidden>Weiter zu Station 4</button>
+    </section>
+
+    <!-- 4 Zeichen rechts unten -->
+    <section class="mp-station" id="s-4" data-title="Zeichen @ und €">
+      <h2>Station 4: Zeichen rechts unten auf der Taste</h2>
+      <div class="mp-task">Manche Zeichen stehen rechts unten auf der Taste. Bei vielen Tastaturen bekommst du das Zeichen mit <kbd>Alt Gr</kbd>: Halte <kbd>Alt Gr</kbd> gedrückt und drücke dann die Taste. Auf dem Tablet findest du es hinter der Taste <kbd>123</kbd>.</div>
+      <div class="tp-target tp-big tp-mono" id="t4" aria-hidden="true"></div>
+      <label class="tp-label" for="in4">Hier tippen:</label>
+      <input class="ll-input tp-in tp-in--small tp-mono" type="text" id="in4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <p class="tp-keys" id="k4"></p>
+      <p class="mp-counter" id="c4"></p>
+      <p class="ll-feedback" id="msg4" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="5" hidden>Weiter zu Station 5</button>
+    </section>
+
+    <!-- 5 Löschen und korrigieren -->
+    <section class="mp-station" id="s-5" data-title="Korrigieren">
+      <h2>Station 5: Löschen und korrigieren</h2>
+      <div class="mp-task">Im Satz unten sind <strong>3 Tippfehler</strong>. Korrigiere ihn, bis er genau so aussieht wie im gelben Kasten. Mit den Pfeiltasten <kbd>←</kbd> <kbd>→</kbd> bewegst du den Cursor. Die Rücktaste <kbd>⟵</kbd> löscht links vom Cursor, <kbd>Entf</kbd> löscht rechts. Auf dem Tablet tippst du mit dem Finger an die Stelle.</div>
+      <div class="tp-target tp-mono" id="t5" style="font-size: clamp(1.2rem, 4.5vw, 1.8rem);">Am Montag gehen wir in den Zoo.</div>
+      <label class="tp-label" for="in5">Hier korrigieren:</label>
+      <textarea class="ll-input tp-in tp-mono" id="in5" rows="2" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="ll-actions" style="margin-top: 12px;">
+        <button class="ll-btn" type="button" id="check5">Prüfen</button>
+        <button class="ll-btn ll-btn--ghost" type="button" id="reset5">Neu anfangen</button>
+      </div>
+      <p class="ll-feedback" id="msg5" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="6" hidden>Weiter zu Station 6</button>
+    </section>
+
+    <!-- 6 Feststelltaste -->
+    <section class="mp-station" id="s-6" data-title="Feststelltaste">
+      <h2>Station 6: Feststelltaste</h2>
+      <div class="mp-task">Mit der Feststelltaste <kbd>⇪</kbd> schreibst du nur Großbuchstaben, ohne die Umschalttaste <kbd>⇧</kbd> festzuhalten. Sie liegt links auf der Tastatur, über der Umschalttaste. Einmal drücken: an. Noch einmal drücken: aus. Auf dem Tablet tippst du zweimal schnell auf <kbd>⇧</kbd>.</div>
+      <ul class="mp-checklist" id="list6">
+        <li id="c6a">Schalte die Feststelltaste <kbd>⇪</kbd> ein.</li>
+        <li id="c6b">Tippe den Satz in Großbuchstaben.</li>
+        <li id="c6c">Schalte die Feststelltaste <kbd>⇪</kbd> wieder aus.</li>
+      </ul>
+      <div class="tp-target tp-mono" id="t6" aria-hidden="true"></div>
+      <label class="tp-label" for="in6">Hier tippen:</label>
+      <input class="ll-input tp-in tp-mono" type="text" id="in6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div id="fallback6" hidden>
+        <label class="tp-label" for="in6b" style="margin-top: 16px;">Schalte die Feststelltaste wieder aus und tippe hier das Wort <strong>fertig</strong> in kleinen Buchstaben:</label>
+        <input class="ll-input tp-in tp-mono" type="text" id="in6b" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <p class="ll-feedback" id="msg6" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="7" hidden>Weiter zu Station 7</button>
+    </section>
+
+    <!-- 7 Passwort-Boss -->
+    <section class="mp-station" id="s-7" data-title="Passwort-Boss">
+      <h2>Station 7: Passwort-Boss</h2>
+      <div class="mp-task">Jetzt kommt der Endgegner: ein sicheres Passwort. Tippe es <strong>genau</strong> ab. Groß- und Kleinschreibung zählt! Wenn etwas falsch ist, zeigt dir die Seite die Stelle mit dem ersten Fehler.</div>
+      <div class="tp-target tp-mono" id="t7" aria-hidden="true"></div>
+      <label class="tp-label" for="in7">Passwort hier tippen:</label>
+      <input class="ll-input tp-in tp-mono" type="text" id="in7" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
+      <p class="mp-counter" id="c7"></p>
+      <p class="ll-feedback" id="msg7" role="status" aria-live="polite"></p>
+      <button class="ll-btn" type="button" data-go="8" hidden>Zur Urkunde</button>
+    </section>
+
+    <!-- Urkunde -->
+    <section class="mp-station" id="s-ende" data-title="Urkunde">
+      <div class="mp-noprint">
+        <h2>Geschafft!</h2>
+        <p>Schreib deinen Namen in das Feld. Dann kannst du deine Urkunde ausdrucken oder als PDF speichern.</p>
+        <div class="ll-actions mp-name-row">
+          <label for="nameIn">Dein Name:</label>
+          <input class="ll-input" type="text" id="nameIn" autocomplete="off" maxlength="40">
+          <button class="ll-btn" type="button" id="printBtn">Urkunde drucken</button>
+        </div>
+      </div>
+      <div class="mp-cert" id="cert">
+        <div class="mp-big" aria-hidden="true">🏅</div>
+        <h2>Tastaturführerschein</h2>
+        <div>Hiermit wird bestätigt:</div>
+        <div class="mp-cert-name" id="certName">&nbsp;</div>
+        <div>kann die Tastatur sicher bedienen und hat diese Stationen geschafft:</div>
+        <ul id="certList"></ul>
+        <div id="certDate"></div>
+      </div>
+    </section>
+
+    <p class="mp-credits mp-noprint">Tastaturparcours · Lernland Digital · Jannetje Egbers · Lizenz CC BY-NC-SA 4.0 · ohne Werbung, ohne Anmeldung, es werden keine Daten gespeichert</p>
+  </main>
+
+  <script>
+  (function () {
+    const stations = ['s-start', 's-1', 's-2', 's-3', 's-4', 's-5', 's-6', 's-7', 's-ende'];
+    const N = 7, END = 8;
+    const done = new Set();
+    const stepsEl = document.getElementById('steps');
+    const $ = id => document.getElementById(id);
+
+    function renderSteps(cur) {
+      stepsEl.innerHTML = '';
+      stations.forEach((id, i) => {
+        const sec = $(id);
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = (i > 0 && i < END ? i + ' ' : '') + sec.dataset.title;
+        if (i === cur) b.setAttribute('aria-current', 'step');
+        if (done.has(i)) b.classList.add('is-done');
+        if (i === END && done.size < N) { b.disabled = true; b.title = 'Erst alle Stationen schaffen'; }
+        b.addEventListener('click', () => go(i));
+        li.appendChild(b); stepsEl.appendChild(li);
+      });
+      $('progressLabel').textContent = done.size + ' von ' + N;
+      $('progressFill').style.width = (done.size / N * 100) + '%';
+    }
+    let current = 0;
+    function go(i) {
+      current = i;
+      stations.forEach((id, k) => $(id).classList.toggle('is-active', k === i));
+      renderSteps(i);
+      if (i === END) fillCert();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const inp = $(stations[i]).querySelector('.tp-in:not([disabled])');
+      if (inp) setTimeout(() => inp.focus({ preventScroll: true }), 50);
+    }
+    document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(+b.dataset.go)));
+
+    function finish(n, text) {
+      done.add(n);
+      say(n, text, 'ok');
+      const nb = $('s-' + n).querySelector('[data-go]'); if (nb) nb.hidden = false;
+      renderSteps(n);
+    }
+    function say(n, text, cls) {
+      const m = $('msg' + n);
+      m.textContent = text;
+      m.className = 'll-feedback' + (cls === 'ok' ? ' is-success' : cls === 'no' ? ' is-error' : '');
+    }
+    // Zeichen für Rückmeldungen gut lesbar machen
+    const show = c => c === ' ' ? 'Leerzeichen' : '„' + c + '“';
+    const isLetter = c => /\p{L}/u.test(c);
+    const isUpper = c => isLetter(c) && c !== c.toLowerCase();
+
+    /* ---------- Feststelltaste: Erkennung auf allen Stationen ---------- */
+    const capsWarn = $('capsWarn');
+    let capsOn = null;          // null = unbekannt
+    let capsSeenOn = false;     // wurde je "an" erkannt?
+    let capsUnreliable = false; // Erkennung klappt hier nicht (z. B. Tablet)
+    function readCaps(e) {
+      if (typeof e.getModifierState !== 'function') { capsUnreliable = true; return; }
+      if (!e.key || e.key === 'Unidentified' || e.key === 'Process') { capsUnreliable = true; return; }
+      const on = e.getModifierState('CapsLock');
+      // Großbuchstabe ohne ⇧ und ohne erkannte Feststelltaste: Erkennung unzuverlässig
+      if (e.type === 'keydown' && e.key.length === 1 && isUpper(e.key) && !e.shiftKey && !on) capsUnreliable = true;
+      setCaps(on);
+    }
+    function setCaps(on) {
+      capsOn = on;
+      capsWarn.hidden = !on;
+      if (on && !capsSeenOn) { capsSeenOn = true; caps6Changed(); }
+      else caps6Changed();
+    }
+    document.addEventListener('keydown', readCaps, true);
+    document.addEventListener('keyup', readCaps, true);
+    document.addEventListener('mousedown', e => { if (typeof e.getModifierState === 'function' && capsOn !== null) setCaps(e.getModifierState('CapsLock')); }, true);
+
+    /* ---------- Tipp-Maschine für Wörter, Satz und Passwort ---------- */
+    function renderTarget(el, target, value, firstBadMark) {
+      el.innerHTML = '';
+      const t = Array.from(target), v = Array.from(value);
+      let firstBad = -1;
+      t.forEach((c, i) => {
+        const s = document.createElement('span');
+        s.className = 'tp-ch' + (c === ' ' ? ' is-space' : '');
+        s.textContent = c === ' ' ? ' ' : c;
+        if (i < v.length) {
+          if (v[i] === c) s.classList.add('is-ok');
+          else { s.classList.add('is-bad'); if (firstBad < 0) firstBad = i; }
+        } else if (i === v.length) s.classList.add('is-next');
+        if (firstBadMark && i === firstBad) s.classList.add('is-first-bad');
+        el.appendChild(s);
+      });
+      v.slice(t.length).forEach(c => {
+        const s = document.createElement('span');
+        s.className = 'tp-ch is-extra'; s.textContent = c === ' ' ? ' ' : c;
+        el.appendChild(s);
+      });
+    }
+    function firstMismatch(target, value) {
+      const t = Array.from(target), v = Array.from(value);
+      for (let i = 0; i < Math.min(t.length, v.length); i++) if (t[i] !== v[i]) return i;
+      return -1;
+    }
+
+    function makeTyper(cfg) {
+      const input = $(cfg.input), display = $(cfg.display), counter = cfg.counter ? $(cfg.counter) : null;
+      let idx = 0;
+      function update() {
+        const target = cfg.items[idx];
+        const value = input.value.replace(/\s+$/, m => (target.endsWith(' ') ? m : ''));
+        renderTarget(display, target, input.value, cfg.markFirstBad);
+        if (counter) counter.textContent = cfg.countText(idx, input.value);
+        if (value === target) { ok(); return; }
+        const i = firstMismatch(target, input.value);
+        if (i >= 0) say(cfg.n, cfg.hint(Array.from(target)[i], Array.from(input.value)[i], i, target), 'no');
+        else if (Array.from(input.value).length > Array.from(target).length) say(cfg.n, 'Du hast zu viele Zeichen getippt. Lösche sie mit der Rücktaste ⟵.', 'no');
+        else say(cfg.n, input.value ? 'Bis hierhin stimmt alles. Weiter so!' : '', input.value ? 'ok' : '');
+      }
+      function ok() {
+        const target = cfg.items[idx];
+        idx++;
+        if (idx >= cfg.items.length) {
+          input.classList.add('is-ok');
+          cfg.done(target);
+          return;
+        }
+        say(cfg.n, 'Richtig: „' + target + '“! Jetzt das nächste Wort.', 'ok');
+        input.value = '';
+        renderTarget(display, cfg.items[idx], '');
+        if (counter) counter.textContent = cfg.countText(idx, '');
+      }
+      input.addEventListener('input', () => { if (idx < cfg.items.length) update(); });
+      renderTarget(display, cfg.items[0], '');
+      if (counter) counter.textContent = cfg.countText(0, '');
+      return {
+        reset() { idx = 0; input.value = ''; input.classList.remove('is-ok'); renderTarget(display, cfg.items[0], ''); }
+      };
+    }
+
+    /* ---------- 1 Wörter ---------- */
+    const words1 = ['und', 'rot', 'gehen', 'klein', 'lesen'];
+    makeTyper({
+      n: 1, input: 'in1', display: 't1', counter: 'c1', items: words1,
+      countText: i => 'Wort ' + (i + 1) + ' von ' + words1.length,
+      hint: (want, got) => {
+        if (isUpper(got) && got.toLowerCase() === want) return 'Das ist ein Großbuchstabe. Hier brauchst du einen kleinen Buchstaben: ' + show(want) + '.';
+        return 'Statt ' + show(want) + ' hast du ' + show(got) + ' getippt. Lösche den roten Buchstaben mit der Rücktaste ⟵.';
+      },
+      done: () => finish(1, 'Super! Du hast alle 5 Wörter richtig getippt.')
+    });
+
+    /* ---------- 2 Großbuchstaben ---------- */
+    const words2 = ['Lena', 'Hund', 'Schule', 'Montag', 'Ostsee'];
+    const shiftHint = 'Halte die Umschalttaste ⇧ gedrückt und drücke dann den Buchstaben.';
+    makeTyper({
+      n: 2, input: 'in2', display: 't2', counter: 'c2', items: words2,
+      countText: i => 'Wort ' + (i + 1) + ' von ' + words2.length,
+      hint: (want, got) => {
+        if (isUpper(want) && got === want.toLowerCase()) return 'Hier fehlt der Großbuchstabe ' + show(want) + '. ' + shiftHint;
+        if (isUpper(got) && got.toLowerCase() === want) return 'Nur der erste Buchstabe ist groß. Lass die Umschalttaste ⇧ los, bevor du weitertippst.';
+        return 'Statt ' + show(want) + ' hast du ' + show(got) + ' getippt. Lösche den roten Buchstaben mit der Rücktaste ⟵.' + (isUpper(want) ? ' ' + shiftHint : '');
+      },
+      done: () => finish(2, 'Klasse! Du kannst Großbuchstaben tippen.')
+    });
+
+    /* ---------- 3 + 4 Einzelzeichen ---------- */
+    function makeCharTrainer(cfg) {
+      const input = $(cfg.input), display = $(cfg.display), keys = $(cfg.keys), counter = $(cfg.counter);
+      let idx = 0;
+      function showChar() {
+        const c = cfg.chars[idx];
+        display.innerHTML = '<span class="tp-ch is-next">' + c.ch + '</span>';
+        keys.innerHTML = c.keys;
+        counter.textContent = 'Zeichen ' + (idx + 1) + ' von ' + cfg.chars.length;
+      }
+      input.addEventListener('input', () => {
+        if (idx >= cfg.chars.length) { input.value = ''; return; }
+        const typed = Array.from(input.value);
+        if (!typed.length) return;
+        const got = typed[typed.length - 1];
+        const want = cfg.chars[idx].ch;
+        input.value = '';
+        if (got === want) {
+          idx++;
+          if (idx >= cfg.chars.length) {
+            display.innerHTML = '<span class="tp-ch is-ok">✔</span>';
+            keys.textContent = '';
+            counter.textContent = 'Alle ' + cfg.chars.length + ' Zeichen geschafft';
+            cfg.done();
+          } else {
+            say(cfg.n, 'Richtig: ' + show(want) + '! Jetzt das nächste Zeichen.', 'ok');
+            showChar();
+          }
+        } else {
+          say(cfg.n, 'Statt ' + show(want) + ' kam ' + show(got) + '. ' + cfg.hint, 'no');
+        }
+      });
+      showChar();
+    }
+    makeCharTrainer({
+      n: 3, input: 'in3', display: 't3', keys: 'k3', counter: 'c3',
+      hint: 'Das Zeichen steht oben auf der Taste. Du brauchst die Umschalttaste ⇧.',
+      chars: [
+        { ch: '!', keys: 'Tipp: <kbd>⇧</kbd> gedrückt halten und <kbd>1</kbd> drücken.' },
+        { ch: '?', keys: 'Tipp: <kbd>⇧</kbd> gedrückt halten und <kbd>ß</kbd> drücken.' },
+        { ch: '%', keys: 'Tipp: <kbd>⇧</kbd> gedrückt halten und <kbd>5</kbd> drücken.' },
+        { ch: '(', keys: 'Tipp: <kbd>⇧</kbd> gedrückt halten und <kbd>8</kbd> drücken.' },
+        { ch: '=', keys: 'Tipp: <kbd>⇧</kbd> gedrückt halten und <kbd>0</kbd> drücken.' }
+      ],
+      done: () => finish(3, 'Prima! Du findest die Zeichen oben auf den Tasten.')
+    });
+    makeCharTrainer({
+      n: 4, input: 'in4', display: 't4', keys: 'k4', counter: 'c4',
+      hint: 'Bei vielen Tastaturen bekommst du das Zeichen mit Alt Gr. Auf dem Tablet findest du es hinter der Taste 123.',
+      chars: [
+        { ch: '@', keys: 'Tipp: <kbd>Alt Gr</kbd> gedrückt halten und <kbd>Q</kbd> drücken.' },
+        { ch: '€', keys: 'Tipp: <kbd>Alt Gr</kbd> gedrückt halten und <kbd>E</kbd> drücken.' }
+      ],
+      done: () => finish(4, 'Stark! Jetzt kannst du @ und € tippen.')
+    });
+
+    /* ---------- 5 Löschen und korrigieren ---------- */
+    const target5 = 'Am Montag gehen wir in den Zoo.';
+    const start5 = 'Am Mnotag gehen wirr in den Zo.';
+    const in5 = $('in5');
+    in5.value = start5;
+    const words = s => s.trim().split(/\s+/);
+    function check5(loud) {
+      if (done.has(5)) return;
+      if (in5.value.trim() === target5) {
+        in5.classList.add('is-ok');
+        finish(5, 'Perfekt! Der Satz stimmt jetzt genau.');
+        return;
+      }
+      if (!loud) { say(5, ''); return; }
+      const a = words(in5.value), b = words(target5);
+      if (a.length === b.length) {
+        const wrong = a.filter((w, i) => w !== b[i]);
+        say(5, 'Noch nicht ganz. ' + (wrong.length === 1 ? 'Dieses Wort stimmt' : 'Diese Wörter stimmen') + ' noch nicht: ' + wrong.map(w => '„' + w + '“').join(', ') + '.', 'no');
+      } else {
+        say(5, 'Noch nicht ganz. Der Satz hat ' + b.length + ' Wörter, bei dir sind es ' + a.length + '. Achte auf die Leerzeichen.', 'no');
+      }
+    }
+    in5.addEventListener('input', () => check5(false));
+    $('check5').addEventListener('click', () => check5(true));
+    $('reset5').addEventListener('click', () => {
+      if (done.has(5)) return;
+      in5.value = start5; say(5, 'Der Satz ist wieder wie am Anfang.'); in5.focus();
+    });
+
+    /* ---------- 6 Feststelltaste ---------- */
+    const sentence6 = 'ICH KANN DAS';
+    let typed6 = false, state6 = 'type'; // type -> waitOff | fallback -> done
+    const mark6 = id => $(id).classList.add('is-done');
+    const typer6 = makeTyper({
+      n: 6, input: 'in6', display: 't6', items: [sentence6],
+      hint: (want, got) => {
+        if (isUpper(want) && got === want.toLowerCase()) return 'Kleiner Buchstabe! Ist die Feststelltaste ⇪ an? Lösche ihn mit der Rücktaste ⟵.';
+        return 'Statt ' + show(want) + ' hast du ' + show(got) + ' getippt. Lösche es mit der Rücktaste ⟵.';
+      },
+      done: () => sentence6Done()
+    });
+    function sentence6Done() {
+      typed6 = true;
+      if (capsSeenOn) {
+        mark6('c6a'); mark6('c6b');
+        if (capsOn === false) { mark6('c6c'); finish6(); }
+        else { state6 = 'waitOff'; say(6, 'Der Satz stimmt! Jetzt schalte die Feststelltaste ⇪ wieder aus.', 'ok'); }
+      } else if (capsUnreliable) {
+        // Erkennung klappt nicht (z. B. Tablet): Großbuchstaben zählen
+        mark6('c6a'); mark6('c6b');
+        state6 = 'fallback';
+        $('fallback6').hidden = false;
+        say(6, 'Der Satz stimmt! Jetzt schalte die Feststelltaste wieder aus und tippe zum Schluss „fertig“ in kleinen Buchstaben.', 'ok');
+        $('in6b').focus();
+      } else {
+        typed6 = false;
+        typer6.reset();
+        say(6, 'Der Satz stimmt, aber du hast die Umschalttaste ⇧ benutzt. Probier es mit der Feststelltaste ⇪: einmal drücken, dann alle Buchstaben ohne ⇧ tippen.', 'no');
+      }
+    }
+    function caps6Changed() {
+      if (done.has(6)) return;
+      if (capsSeenOn) mark6('c6a');
+      if (state6 === 'type' && capsOn && current === 6 && !$('in6').value) say(6, 'Gut, die Feststelltaste ⇪ ist an. Jetzt tippe den Satz.', 'ok');
+      if (state6 === 'waitOff' && capsOn === false) { mark6('c6c'); finish6(); }
+      if (state6 === 'fallback' && capsOn === false && capsSeenOn) { mark6('c6c'); finish6(); }
+    }
+    $('in6b').addEventListener('input', () => {
+      if (done.has(6)) return;
+      const v = $('in6b').value.trim();
+      if (v === 'fertig') { mark6('c6c'); finish6(); }
+      else if (v.toUpperCase() === 'FERTIG' && v !== 'fertig') say(6, 'Da sind noch Großbuchstaben. Die Feststelltaste ist noch an. Schalte sie aus und tippe noch einmal.', 'no');
+    });
+    function finish6() {
+      state6 = 'done';
+      $('in6').disabled = true;
+      finish(6, 'Super! Du kannst die Feststelltaste ein- und ausschalten.');
+    }
+    renderTarget($('t6'), sentence6, '');
+
+    /* ---------- 7 Passwort-Boss ---------- */
+    const pw = '4%äüpIoLK86&#@';
+    const pwLen = Array.from(pw).length;
+    function pwHint(c) {
+      if (/[äöü]/.test(c)) return 'Die Umlaute ä, ö und ü haben eine eigene Taste rechts neben den Buchstaben.';
+      if (isUpper(c)) return 'Das ist ein Großbuchstabe: Halte die Umschalttaste ⇧ gedrückt.';
+      if (isLetter(c)) return 'Das ist ein kleiner Buchstabe: ohne Umschalttaste ⇧.';
+      if (/[0-9]/.test(c)) return 'Das ist eine Zahl aus der obersten Reihe.';
+      if (c === '@') return 'Das @ bekommst du mit Alt Gr und Q. Auf dem Tablet hinter der Taste 123.';
+      if ('%&#'.includes(c)) return 'Für ' + show(c) + ' brauchst du die Umschalttaste ⇧. Auf dem Tablet findest du es hinter der Taste 123.';
+      return '';
+    }
+    makeTyper({
+      n: 7, input: 'in7', display: 't7', counter: 'c7', items: [pw], markFirstBad: true,
+      countText: (i, v) => Array.from(v).length + ' von ' + pwLen + ' Zeichen',
+      hint: (want, got, i) => 'Der erste Fehler ist an Stelle ' + (i + 1) + ': Gesucht ist ' + show(want) + ', du hast ' + show(got) + ' getippt. ' + pwHint(want),
+      done: () => finish(7, 'Boss besiegt! Du hast das Passwort ganz genau getippt.')
+    });
+
+    /* ---------- Urkunde ---------- */
+    const nameIn = $('nameIn');
+    function fillCert() {
+      const d = new Date();
+      $('certDate').textContent = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+      $('certName').textContent = nameIn.value.trim() || ' ';
+      const list = $('certList'); list.innerHTML = '';
+      for (let i = 1; i <= N; i++) {
+        if (!done.has(i)) continue;
+        const li = document.createElement('li'); li.textContent = $('s-' + i).dataset.title; list.appendChild(li);
+      }
+    }
+    nameIn.addEventListener('input', fillCert);
+    $('printBtn').addEventListener('click', () => { fillCert(); window.print(); });
+
+    renderSteps(0);
+  })();
+  </script>
+</body>
+</html>
