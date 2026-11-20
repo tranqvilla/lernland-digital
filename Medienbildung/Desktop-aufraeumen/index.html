@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desktop aufräumen | Lernland</title>
+  <meta name="description" content="Auf dem Desktop liegen 20 Dateien durcheinander. Sortiere Texte, Musik und Bilder in die richtigen Ordner – mit Ziehen, Ausschneiden, Kopieren und Einfügen.">
+  <link rel="stylesheet" href="../../lernland.css">
+  <style>
+    :focus-visible { outline: 3px solid var(--ll-accent); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Start ---------- */
+    .mp-hero { text-align: center; }
+    .mp-big { font-size: 3.5rem; line-height: 1.2; }
+    .dk-tree {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 8px;
+      padding: 0;
+      list-style: none;
+      text-align: left;
+    }
+    .dk-tree > li {
+      padding: 12px 14px;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+    }
+    .dk-tree-top { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+    .dk-tree ul { margin: 6px 0 0; padding: 0 0 0 18px; list-style: none; border-left: 2px solid var(--ll-line-soft); }
+    .dk-tree ul li { display: flex; align-items: center; gap: 6px; padding: 3px 0 3px 8px; }
+    .dk-tree svg { width: 26px; height: 26px; flex: none; }
+    .dk-tree ul svg { width: 22px; height: 22px; }
+    .dk-howto { margin: 18px auto 24px; max-width: 560px; padding: 0 0 0 1.2em; text-align: left; }
+    .dk-howto li { padding: 3px 0; }
+
+    /* ---------- Spielbereich ---------- */
+    .dk-wrap { width: min(1260px, calc(100% - 32px)); margin: 24px auto 40px; }
+    .dk-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .dk-head h1 { margin: 0; font-size: clamp(1.4rem, 3vw, 1.9rem); line-height: 1.2; }
+    .dk-head .ll-btn { padding: 9px 16px; }
+    .dk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 20px; align-items: start; }
+    @media (max-width: 1020px) { .dk-layout { grid-template-columns: 1fr; } }
+
+    .dk-aside { display: grid; gap: 14px; font-size: 0.95rem; }
+    .dk-panel {
+      padding: 14px 16px;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .dk-panel h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .dk-panel p { margin: 0; }
+    .dk-panel--task { background: var(--ll-argument-bg); }
+    .dk-legend { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .dk-legend li { display: flex; align-items: center; gap: 8px; }
+    .dk-legend svg { width: 30px; height: 30px; flex: none; }
+    .dk-legend code { font: 700 0.9rem ui-monospace, Consolas, monospace; }
+    .mp-checklist { margin: 0; padding: 0; list-style: none; }
+    .mp-checklist li { position: relative; padding: 4px 0 4px 1.6em; line-height: 1.35; }
+    .mp-checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--ll-muted); }
+    .mp-checklist li.is-done { color: var(--ll-success); }
+    .mp-checklist li.is-done::before { content: "✔"; color: var(--ll-success); }
+    .mp-checklist li.is-new { animation: dk-pop 600ms ease; }
+    @keyframes dk-pop { 0% { background: var(--ll-success-bg); } 100% { background: transparent; } }
+
+    /* ---------- Bildschirm ---------- */
+    .dk-screen {
+      --dk-task-h: 52px;
+      position: relative;
+      height: clamp(520px, 76vh, 780px);
+      overflow: hidden;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.55) 0, transparent 55%),
+        linear-gradient(160deg, #d6e7f6 0%, #b7d2ec 100%);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      font-size: 1rem;
+    }
+    .dk-desktop { position: absolute; inset: 0 0 var(--dk-task-h) 0; overflow: auto; }
+    .dk-desk-grid {
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(auto-fill, 112px);
+      grid-auto-columns: 104px;
+      gap: 4px;
+      height: 100%;
+      padding: 10px;
+      align-content: start;
+    }
+
+    /* Symbole */
+    .dk-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      width: 100px;
+      padding: 6px 4px;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      color: var(--ll-ink);
+      text-align: center;
+      cursor: default;
+      position: relative;
+    }
+    .dk-icon:hover { background: rgba(255, 255, 255, 0.55); border-color: rgba(0, 0, 0, 0.25); }
+    .dk-ico { display: block; width: 48px; height: 48px; flex: none; }
+    .dk-ico svg { display: block; width: 100%; height: 100%; }
+    .dk-label {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 100%;
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.2;
+      overflow-wrap: break-word;
+    }
+    .dk-icon.is-selected { background: #fde3d9; border-color: var(--ll-accent); }
+    .dk-icon.is-selected .dk-label { -webkit-line-clamp: 6; }
+    .dk-icon.is-cut { opacity: 0.45; }
+    .dk-icon.is-wrong { border: 2px dashed var(--ll-error); background: var(--ll-error-bg); }
+    .dk-icon.is-wrong::after {
+      content: "✗";
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      color: #fff;
+      background: var(--ll-error);
+      border-radius: 50%;
+      font: 700 0.85rem/22px var(--ll-font-ui);
+    }
+    .dk-icon.is-drop, .dk-crumb.is-drop { background: var(--ll-success-bg) !important; border-color: var(--ll-success) !important; }
+    .dk-body.is-drop { box-shadow: inset 0 0 0 3px var(--ll-success); background: #f3fbf7; }
+
+    /* Fenster */
+    .dk-win {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      min-width: 270px;
+      min-height: 200px;
+      overflow: hidden;
+      resize: both;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    }
+    .dk-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+      height: 40px;
+      padding: 0 4px 0 10px;
+      color: #333;
+      background: #e6e6e6;
+      cursor: move;
+      font-weight: 700;
+    }
+    .dk-win.is-active .dk-titlebar { color: #fff; background: #000; }
+    .dk-tico { width: 24px; height: 24px; flex: none; }
+    .dk-tico svg { display: block; width: 100%; height: 100%; }
+    .dk-wtitle { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dk-close {
+      width: 34px;
+      height: 32px;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+      font: 700 1.05rem var(--ll-font-ui);
+    }
+    .dk-close:hover { color: #fff; background: var(--ll-error); }
+    .dk-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+      padding: 7px 8px;
+      border-bottom: 2px solid var(--ll-line-soft);
+    }
+    .dk-up {
+      flex: none;
+      width: 36px;
+      height: 36px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: 2px solid var(--ll-ink);
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 700 1.2rem var(--ll-font-ui);
+    }
+    .dk-up:hover { background: #f0f0f0; }
+    .dk-up:disabled { color: #a0a0a0; border-color: #c4c4c4; cursor: default; background: var(--ll-paper); }
+    .dk-crumbs {
+      display: flex;
+      flex: 1;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px;
+      min-width: 0;
+      min-height: 36px;
+      padding: 2px 6px;
+      border: 2px solid var(--ll-ink);
+      border-radius: var(--ll-radius-sm);
+    }
+    .dk-crumb {
+      padding: 3px 7px;
+      color: var(--ll-ink);
+      background: none;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font: 600 0.92rem var(--ll-font-ui);
+    }
+    .dk-crumb:hover { background: #f0f0f0; border-color: var(--ll-ink); }
+    .dk-crumb[aria-current] { font-weight: 800; }
+    .dk-sep { color: var(--ll-muted); font-weight: 700; }
+    .dk-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      justify-items: center;
+      align-content: start;
+      gap: 4px;
+      min-height: 0;
+      padding: 10px;
+      overflow: auto;
+    }
+    .dk-body .dk-icon:hover { background: #f3f3f3; }
+    .dk-body .dk-icon.is-selected { background: #fde3d9; }
+    .dk-body .dk-icon.is-wrong { background: var(--ll-error-bg); }
+    .dk-empty { grid-column: 1 / -1; margin: 24px 0; color: var(--ll-muted); font-style: italic; }
+    .dk-status {
+      flex: none;
+      padding: 5px 12px 5px;
+      color: var(--ll-muted);
+      border-top: 1px solid var(--ll-line-soft);
+      font-size: 0.8rem;
+      padding-right: 26px;
+    }
+
+    /* Taskleiste */
+    .dk-taskbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: var(--dk-task-h);
+      padding: 0 8px 0 12px;
+      color: #fff;
+      background: #000;
+    }
+    .dk-brand { font-weight: 700; white-space: nowrap; }
+    .dk-tasks { display: flex; flex: 1; gap: 6px; min-width: 0; overflow: hidden; }
+    .dk-task {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 170px;
+      min-width: 0;
+      padding: 5px 10px;
+      color: #fff;
+      background: #262626;
+      border: 2px solid #555;
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 600 0.85rem var(--ll-font-ui);
+    }
+    .dk-task span:last-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dk-task svg { width: 18px; height: 18px; flex: none; }
+    .dk-task.is-active { border-color: var(--ll-accent); background: #3a3a3a; }
+    .dk-count { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+    .dk-count.is-empty { color: #8fe0b8; }
+    .dk-check {
+      padding: 8px 16px;
+      color: #000;
+      background: #fff;
+      border: 2px solid #fff;
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 700 0.95rem var(--ll-font-ui);
+    }
+    .dk-check:hover { background: var(--ll-accent); border-color: var(--ll-accent); color: #fff; }
+    @media (max-width: 700px) {
+      .dk-brand { display: none; }
+      .dk-count { font-size: 0.75rem; white-space: normal; max-width: 110px; line-height: 1.2; }
+      .dk-icon { width: 86px; }
+      .dk-desk-grid { grid-auto-columns: 90px; }
+    }
+
+    /* Hinweise und Dialoge */
+    .dk-toast {
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--dk-task-h) + 12px);
+      z-index: 6000;
+      width: max-content;
+      max-width: min(560px, calc(100% - 24px));
+      padding: 10px 16px;
+      transform: translateX(-50%);
+      color: #fff;
+      background: rgba(0, 0, 0, 0.88);
+      border-radius: var(--ll-radius);
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: center;
+      pointer-events: none;
+    }
+    .dk-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 7000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.35);
+    }
+    .dk-dialog {
+      width: min(480px, 100%);
+      max-height: 100%;
+      overflow: auto;
+      padding: 22px 24px;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .dk-dialog h2 { margin: 0 0 10px; font-size: 1.3rem; }
+    .dk-dialog p { margin: 0 0 10px; }
+    .dk-dialog ul { margin: 0 0 14px; padding-left: 1.2em; }
+    .dk-dialog li { padding: 2px 0; }
+    .dk-dialog .ll-actions { margin-top: 16px; }
+
+    .dk-menu {
+      position: fixed;
+      z-index: 9000;
+      min-width: 230px;
+      padding: 6px 0;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .dk-menu button {
+      display: block;
+      width: 100%;
+      padding: 9px 18px;
+      color: var(--ll-ink);
+      background: none;
+      border: 0;
+      cursor: pointer;
+      font: 600 1rem var(--ll-font-ui);
+      text-align: left;
+    }
+    .dk-menu button:hover:not(:disabled) { background: #fde3d9; }
+    .dk-menu button:disabled { color: #a6a6a6; cursor: default; }
+    .dk-menu hr { margin: 5px 0; border: 0; border-top: 2px solid var(--ll-line-soft); }
+    .dk-menu-head { margin: 0; padding: 4px 18px 6px; color: var(--ll-muted); font: 700 0.75rem var(--ll-font-ui); letter-spacing: 0.06em; text-transform: uppercase; }
+    .dk-menu-note { margin: 0; padding: 2px 18px 6px; color: var(--ll-muted); font-size: 0.85rem; font-style: italic; }
+
+    .dk-ghost {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9500;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    .dk-ghost .dk-ico { position: relative; }
+    .dk-badge {
+      position: absolute;
+      top: -8px;
+      right: -14px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 6px;
+      color: #fff;
+      background: var(--ll-accent);
+      border: 2px solid #fff;
+      border-radius: 13px;
+      font: 700 0.85rem/22px var(--ll-font-ui);
+      text-align: center;
+    }
+    .dk-ghost-label {
+      padding: 3px 9px;
+      color: #fff;
+      background: #000;
+      border-radius: 5px;
+      font: 700 0.85rem var(--ll-font-ui);
+      white-space: nowrap;
+    }
+    .dk-ghost-label:empty { display: none; }
+    .dk-lasso {
+      position: fixed;
+      z-index: 8000;
+      pointer-events: none;
+      background: rgba(238, 85, 34, 0.12);
+      border: 2px solid var(--ll-accent);
+    }
+    body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
+
+    /* ---------- Urkunde ---------- */
+    .mp-name-row { margin: 16px 0 24px; }
+    .mp-name-row .ll-input { min-width: 240px; }
+    .mp-cert {
+      margin: 10px 0 18px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--ll-paper);
+      border: 6px double var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+    .mp-cert h2 { margin: 4px 0 10px; font-size: clamp(1.3rem, 6vw, 2rem); overflow-wrap: anywhere; }
+    .mp-cert-name {
+      display: inline-block;
+      min-width: 60%;
+      margin: 8px 0;
+      padding: 0 10px;
+      border-bottom: 2px solid var(--ll-ink);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .mp-cert ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0; padding: 0; list-style: none; }
+    .mp-cert ul li {
+      padding: 4px 12px;
+      color: var(--ll-success);
+      background: var(--ll-success-bg);
+      border: 2px solid var(--ll-success);
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .mp-cert ul li::before { content: "✔ "; }
+
+    .mp-credits {
+      margin: 32px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--ll-line-soft);
+      color: var(--ll-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    @media (max-width: 560px) {
+      .mp-name-row .ll-input { min-width: 0; width: 100%; }
+    }
+
+    @media print {
+      .mp-noprint, #intro, #game, .dk-menu, .dk-ghost { display: none !important; }
+      #ende { display: block !important; width: 100%; margin: 0; padding: 0; border: 0; }
+      .mp-cert { border-color: #000; }
+    }
+  </style>
+</head>
+<body class="ll-page">
+
+  <!-- Start -->
+  <main class="ll-card ll-card--wide" id="intro">
+    <p class="ll-eyebrow">Medienbildung</p>
+    <h1>Räume deinen Desktop auf</h1>
+    <p class="ll-intro">Auf dem Desktop liegen 20 Dateien wild durcheinander: Texte, Musik und Bilder. Sortiere jede Datei in den richtigen Ordner – so findest du später alles wieder.</p>
+    <div class="mp-hero">
+      <div class="mp-big" aria-hidden="true">🗂️</div>
+      <h2 style="margin:0 0 6px;font-size:1.375rem;">Hilfe, mein Desktop ist voll!</h2>
+      <p style="margin:0;">Auf dem Desktop gibt es drei Ordner. In jedem Ordner stecken zwei Unterordner:</p>
+      <ul class="dk-tree" id="introTree"></ul>
+      <ol class="dk-howto">
+        <li><strong>Doppelklick</strong> auf einen Ordner öffnet ein Fenster.</li>
+        <li><strong>Ziehe</strong> Dateien mit gedrückter Maustaste in einen Ordner.</li>
+        <li>Klicke auf eine freie Stelle und <strong>ziehe einen Rahmen</strong> – so wählst du mehrere Dateien auf einmal aus.</li>
+        <li>Mit der <strong>rechten Maustaste</strong> kannst du Dateien ausschneiden, kopieren und einfügen.</li>
+        <li>Oben im Fenster siehst du die <strong>Pfadleiste</strong>. Sie zeigt dir, wo du gerade bist.</li>
+      </ol>
+      <button class="ll-btn" type="button" id="startBtn">Los geht's!</button>
+    </div>
+    <p class="mp-credits">Desktop aufräumen · Lernland Digital · Jannetje Egbers · Lizenz CC BY-NC-SA 4.0 · ohne Werbung, ohne Anmeldung, es werden keine Daten gespeichert</p>
+  </main>
+
+  <!-- Spiel -->
+  <div class="dk-wrap" id="game" hidden>
+    <div class="dk-head">
+      <div>
+        <p class="ll-eyebrow">Medienbildung</p>
+        <h1>Räume deinen Desktop auf</h1>
+      </div>
+      <button class="ll-btn ll-btn--ghost" type="button" id="resetBtn">Neu anfangen</button>
+    </div>
+
+    <div class="dk-layout">
+      <div class="dk-screen" id="screen" aria-label="Nachgestellter Computer-Bildschirm">
+        <div class="dk-desktop" id="desktop" data-container="desk">
+          <div class="dk-desk-grid" id="deskGrid"></div>
+        </div>
+        <div class="dk-taskbar">
+          <span class="dk-brand">🗂️ Mein Computer</span>
+          <div class="dk-tasks" id="tasks"></div>
+          <span class="dk-count" id="deskCount" aria-live="polite"></span>
+          <button class="dk-check" type="button" id="checkBtn">Prüfen</button>
+        </div>
+        <div class="dk-toast" id="toast" role="status" aria-live="polite" hidden></div>
+        <div class="dk-backdrop" id="dlgBack" hidden>
+          <div class="dk-dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+            <h2 id="dlgTitle"></h2>
+            <div id="dlgBody"></div>
+            <div class="ll-actions" id="dlgBtns"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="dk-aside">
+        <div class="dk-panel dk-panel--task">
+          <h2>Dein Auftrag</h2>
+          <p>Jede Datei gehört in einen <strong>Unterordner</strong>. Am Ende soll keine Datei mehr auf dem Desktop liegen. Schau auf den Namen und auf die Endung hinter dem Punkt.</p>
+        </div>
+        <div class="dk-panel">
+          <h2>Welche Datei ist was?</h2>
+          <ul class="dk-legend" id="legend"></ul>
+        </div>
+        <div class="dk-panel">
+          <h2>Probier alles aus</h2>
+          <ul class="mp-checklist" id="skills"></ul>
+        </div>
+      </aside>
+    </div>
+    <p class="mp-credits">Desktop aufräumen · Lernland Digital · Jannetje Egbers · Lizenz CC BY-NC-SA 4.0 · ohne Werbung, ohne Anmeldung, es werden keine Daten gespeichert</p>
+  </div>
+
+  <!-- Urkunde -->
+  <main class="ll-card ll-card--wide" id="ende" hidden>
+    <div class="mp-noprint">
+      <p class="ll-eyebrow">Medienbildung</p>
+      <h1>Geschafft!</h1>
+      <p class="ll-intro">Dein Desktop ist aufgeräumt. Schreib deinen Namen in das Feld. Dann kannst du deine Urkunde ausdrucken oder als PDF speichern.</p>
+      <div class="ll-actions mp-name-row">
+        <label for="nameIn">Dein Name:</label>
+        <input class="ll-input" type="text" id="nameIn" autocomplete="off" maxlength="40">
+        <button class="ll-btn" type="button" id="printBtn">Urkunde drucken</button>
+        <button class="ll-btn ll-btn--ghost" type="button" id="againBtn">Nochmal spielen</button>
+      </div>
+    </div>
+    <div class="mp-cert">
+      <div class="mp-big" aria-hidden="true">🏆</div>
+      <h2>Aufräum-Profi</h2>
+      <div>Hiermit wird bestätigt:</div>
+      <div class="mp-cert-name" id="certName">&nbsp;</div>
+      <div>hat den Desktop aufgeräumt und alle 20 Dateien in die richtigen Ordner sortiert. Dabei geübt:</div>
+      <ul id="certList"></ul>
+      <div id="certDate"></div>
+    </div>
+    <p class="mp-credits mp-noprint">Desktop aufräumen · Lernland Digital · Jannetje Egbers · Lizenz CC BY-NC-SA 4.0 · ohne Werbung, ohne Anmeldung, es werden keine Daten gespeichert</p>
+  </main>
+
+  <div class="dk-ghost" id="ghost" hidden></div>
+
+  <script>
+  (function () {
+    const $ = id => document.getElementById(id);
+
+    /* ---------- Daten ---------- */
+    const FOLDERS = [
+      { id: 'bilder', name: 'Bilder', parent: 'desk' },
+      { id: 'urlaub', name: 'Urlaub', parent: 'bilder' },
+      { id: 'tiere', name: 'Haustiere', parent: 'bilder' },
+      { id: 'musik', name: 'Musik', parent: 'desk' },
+      { id: 'lieder', name: 'Lieblingslieder', parent: 'musik' },
+      { id: 'hoer', name: 'Hörbücher', parent: 'musik' },
+      { id: 'schule', name: 'Schule', parent: 'desk' },
+      { id: 'deutsch', name: 'Deutsch', parent: 'schule' },
+      { id: 'mathe', name: 'Mathe', parent: 'schule' }
+    ];
+    const F = {};
+    FOLDERS.forEach(f => { F[f.id] = f; });
+
+    const FILES = [
+      ['Strand-Italien.jpg', 'urlaub'],
+      ['Sandburg.jpg', 'urlaub'],
+      ['Wandern-in-den-Bergen.png', 'urlaub'],
+      ['Zelt-am-See.jpg', 'urlaub'],
+      ['Katze-Mia.jpg', 'tiere'],
+      ['Hund-Bello.png', 'tiere'],
+      ['Hamster-Krümel.jpg', 'tiere'],
+      ['Sommerhit.mp3', 'lieder'],
+      ['Tanzlied.mp3', 'lieder'],
+      ['Geburtstagslied.mp3', 'lieder'],
+      ['Drachenreiter-Kapitel-1.mp3', 'hoer'],
+      ['Drachenreiter-Kapitel-2.mp3', 'hoer'],
+      ['Detektiv-Hörbuch.mp3', 'hoer'],
+      ['Gedicht-Herbst.docx', 'deutsch'],
+      ['Aufsatz-Ferien.docx', 'deutsch'],
+      ['Lesetagebuch.docx', 'deutsch'],
+      ['Diktat-Übung.txt', 'deutsch'],
+      ['Einmaleins.docx', 'mathe'],
+      ['Rechenaufgaben.txt', 'mathe'],
+      ['Geometrie-Dreiecke.docx', 'mathe']
+    ];
+    const KIND = { jpg: 'bild', png: 'bild', mp3: 'musik', docx: 'text', txt: 'text' };
+    const KIND_NAME = { bild: 'Bilddatei', musik: 'Musikdatei', text: 'Textdatei' };
+
+    const SKILLS = [
+      ['open', 'Ordner mit Doppelklick öffnen', 'Ordner öffnen'],
+      ['drag', 'Datei mit gedrückter Maustaste in einen Ordner ziehen', 'Ziehen und Ablegen'],
+      ['lasso', 'Auf eine freie Stelle klicken und einen Rahmen um mehrere Dateien ziehen', 'Auswahlrahmen'],
+      ['multi', 'Mehrere Dateien auf einmal verschieben', 'Mehrere Dateien verschieben'],
+      ['cut', 'Rechtsklick → Ausschneiden, dann im Ziel-Ordner Rechtsklick → Einfügen', 'Ausschneiden und Einfügen'],
+      ['copy', 'Rechtsklick → Kopieren und Einfügen (Achtung: Dann gibt es die Datei zweimal!)', 'Kopieren und Einfügen'],
+      ['crumb', 'In der Pfadleiste oben im Fenster zurückspringen', 'Pfadleiste']
+    ];
+
+    /* ---------- Symbole ---------- */
+    const S = 'stroke="#000" stroke-width="2.5" stroke-linejoin="round"';
+    const SVG = {
+      folder: '<svg viewBox="0 0 48 48"><path d="M4 11a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v4H4z" fill="#e0a92a" ' + S + '/><path d="M4 17h40v20a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#f7c948" ' + S + '/></svg>',
+      text: '<svg viewBox="0 0 48 48"><path d="M10 4h19l10 10v30H10z" fill="#fff" ' + S + '/><path d="M29 4v10h10" fill="none" ' + S + '/><path d="M16 22h17M16 28h17M16 34h11" stroke="#2f6fb0" stroke-width="3" stroke-linecap="round"/></svg>',
+      musik: '<svg viewBox="0 0 48 48"><path d="M10 4h19l10 10v30H10z" fill="#fff" ' + S + '/><path d="M29 4v10h10" fill="none" ' + S + '/><path d="M21 36V22l12-3v13" fill="none" stroke="#7b3fa0" stroke-width="3" stroke-linejoin="round"/><circle cx="18" cy="36" r="3.8" fill="#7b3fa0"/><circle cx="30" cy="32" r="3.8" fill="#7b3fa0"/></svg>',
+      bild: '<svg viewBox="0 0 48 48"><path d="M10 4h19l10 10v30H10z" fill="#fff" ' + S + '/><path d="M29 4v10h10" fill="none" ' + S + '/><rect x="14.5" y="19" width="20" height="18" rx="1.5" fill="#d2f2e3" stroke="#237a57" stroke-width="2"/><circle cx="28.5" cy="24" r="2.6" fill="#e0a92a"/><path d="M15.5 36l6-8 4 5 3-3 5 6z" fill="#237a57"/></svg>',
+      trash: '<svg viewBox="0 0 48 48"><path d="M12 14h24l-2.5 29h-19z" fill="#e8e8e8" ' + S + '/><path d="M8 14h32M19 14V9h10v5" fill="none" ' + S + '/><path d="M19 20l1 17M24 20v17M29 20l-1 17" stroke="#000" stroke-width="2"/></svg>',
+      trashFull: '<svg viewBox="0 0 48 48"><path d="M15 13l3-7 8 2 4-3 4 8" fill="#fff" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 14h24l-2.5 29h-19z" fill="#e8e8e8" ' + S + '/><path d="M8 14h32" fill="none" ' + S + '/><path d="M19 20l1 17M24 20v17M29 20l-1 17" stroke="#000" stroke-width="2"/></svg>'
+    };
+
+    /* ---------- Zustand ---------- */
+    let items = [], seq = 0, wins = [], wseq = 0, zTop = 10;
+    let sel = { c: null, ids: new Set() }, selFolder = null, clip = null;
+    let wrong = new Set(), skills = new Set(), solved = false, lastTap = null;
+
+    const screenEl = $('screen'), deskEl = $('desktop'), deskGrid = $('deskGrid');
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const byId = id => items.find(i => i.id === id);
+    const winById = id => wins.find(w => w.id === id);
+    const locName = l => l === 'desk' ? 'Desktop' : l === 'trash' ? 'Papierkorb' : F[l].name;
+    const parentOf = l => (l === 'desk' || l === 'trash') ? null : F[l].parent;
+    function locPath(l) {
+      if (l === 'trash') return ['trash'];
+      const p = [];
+      for (let x = l; x; x = parentOf(x)) p.unshift(x);
+      return p;
+    }
+    const pathText = l => locPath(l).map(locName).join(' › ');
+    const containerLoc = c => c === 'desk' ? 'desk' : winById(c).folder;
+    const childFolders = l => FOLDERS.filter(f => f.parent === l);
+    const filesIn = l => items.filter(i => i.loc === l);
+    const nameTaken = (l, name, except) => items.some(i => i.loc === l && i.name === name && i.id !== except);
+    const folderSvg = l => l === 'trash' ? (filesIn('trash').length ? SVG.trashFull : SVG.trash) : SVG.folder;
+    function what(list) {
+      return list.length === 1 ? '„' + list[0].name + '“' : list.length + ' Dateien';
+    }
+    function shuffle(a) {
+      a = a.slice();
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    }
+
+    /* ---------- Start und Legende ---------- */
+    $('introTree').innerHTML = childFolders('desk').map(f =>
+      '<li><div class="dk-tree-top">' + SVG.folder + esc(f.name) + '</div><ul>' +
+      childFolders(f.id).map(s => '<li>' + SVG.folder + esc(s.name) + '</li>').join('') + '</ul></li>'
+    ).join('');
+    $('legend').innerHTML =
+      '<li>' + SVG.text + '<span>Text: <code>.docx</code> <code>.txt</code></span></li>' +
+      '<li>' + SVG.musik + '<span>Musik: <code>.mp3</code></span></li>' +
+      '<li>' + SVG.bild + '<span>Bild: <code>.jpg</code> <code>.png</code></span></li>';
+
+    /* ---------- Darstellung ---------- */
+    function iconHTML(kind, id, label, svg, cls) {
+      return '<div class="dk-icon' + (cls ? ' ' + cls : '') + '" data-kind="' + kind + '" data-id="' + esc(id) + '" title="' + esc(label) + '">' +
+        '<span class="dk-ico" aria-hidden="true">' + svg + '</span><span class="dk-label">' + esc(label).replace(/-/g, '-<wbr>').replace(/\.(?=[a-z0-9]+$)/i, '<wbr>.') + '</span></div>';
+    }
+    function containerHTML(l, c) {
+      let html = childFolders(l).map(f => iconHTML('folder', f.id, f.name, SVG.folder)).join('');
+      if (l === 'desk') html += iconHTML('trash', 'trash', 'Papierkorb', folderSvg('trash'));
+      let files = filesIn(l);
+      if (c !== 'desk') files = files.slice().sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      html += files.map(it => {
+        const cls = [];
+        if (clip && clip.mode === 'cut' && clip.ids.includes(it.id)) cls.push('is-cut');
+        if (wrong.has(it.id)) cls.push('is-wrong');
+        return iconHTML('file', it.id, it.name, SVG[it.kind], cls.join(' '));
+      }).join('');
+      if (c !== 'desk' && !html) html = '<p class="dk-empty">' + (l === 'trash' ? 'Der Papierkorb ist leer.' : 'Dieser Ordner ist leer.') + '</p>';
+      return html;
+    }
+    function renderWindow(w) {
+      const l = w.folder;
+      w.el.querySelector('.dk-tico').innerHTML = folderSvg(l);
+      w.el.querySelector('.dk-wtitle').textContent = locName(l);
+      w.el.setAttribute('aria-label', 'Fenster ' + locName(l));
+      w.el.querySelector('.dk-up').disabled = !parentOf(l);
+      const p = locPath(l);
+      w.el.querySelector('.dk-crumbs').innerHTML = p.map((x, i) =>
+        '<button type="button" class="dk-crumb" data-loc="' + x + '"' + (i === p.length - 1 ? ' aria-current="location"' : '') + '>' + esc(locName(x)) + '</button>'
+      ).join('<span class="dk-sep" aria-hidden="true">›</span>');
+      w.el.querySelector('.dk-body').innerHTML = containerHTML(l, w.id);
+    }
+    function renderStatus() {
+      wins.forEach(w => {
+        const n = childFolders(w.folder).length + filesIn(w.folder).length + (w.folder === 'desk' ? 1 : 0);
+        let t = n + (n === 1 ? ' Element' : ' Elemente');
+        if (sel.c === w.id && sel.ids.size) t += ' · ' + sel.ids.size + ' ausgewählt';
+        w.el.querySelector('.dk-status').textContent = t;
+      });
+    }
+    function renderTaskbar() {
+      const top = wins.reduce((a, w) => (!a || w.z > a.z ? w : a), null);
+      $('tasks').innerHTML = wins.map(w =>
+        '<button type="button" class="dk-task' + (w === top ? ' is-active' : '') + '" data-win="' + w.id + '">' + folderSvg(w.folder) + '<span>' + esc(locName(w.folder)) + '</span></button>'
+      ).join('');
+      const n = filesIn('desk').length;
+      const cnt = $('deskCount');
+      cnt.textContent = n ? 'Auf dem Desktop: ' + n + (n === 1 ? ' Datei' : ' Dateien') : 'Desktop ist leer ✔';
+      cnt.classList.toggle('is-empty', !n);
+    }
+    function paintSel() {
+      screenEl.querySelectorAll('.dk-icon').forEach(ic => {
+        const cont = ic.closest('[data-container]');
+        if (!cont) return;
+        const c = cont.dataset.container, id = ic.dataset.id;
+        const on = ic.dataset.kind === 'file'
+          ? sel.c === c && sel.ids.has(id)
+          : !!selFolder && selFolder.c === c && selFolder.id === id;
+        ic.classList.toggle('is-selected', on);
+      });
+      renderStatus();
+    }
+    function renderAll() {
+      deskGrid.innerHTML = containerHTML('desk', 'desk');
+      wins.forEach(renderWindow);
+      renderTaskbar();
+      paintSel();
+    }
+    function renderSkills(fresh) {
+      $('skills').innerHTML = SKILLS.map(([k, t]) =>
+        '<li class="' + (skills.has(k) ? 'is-done' : '') + (k === fresh ? ' is-new' : '') + '">' + esc(t) + '</li>'
+      ).join('');
+    }
+    function skill(k) {
+      if (skills.has(k)) return;
+      skills.add(k);
+      renderSkills(k);
+    }
+
+    /* ---------- Hinweise und Dialoge ---------- */
+    let toastT = null;
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.hidden = false;
+      clearTimeout(toastT);
+      toastT = setTimeout(() => { t.hidden = true; }, Math.max(3500, msg.length * 55));
+    }
+    function dialog(title, bodyHTML, buttons) {
+      hideMenu();
+      $('dlgTitle').textContent = title;
+      $('dlgBody').innerHTML = bodyHTML;
+      const bx = $('dlgBtns');
+      bx.innerHTML = '';
+      buttons.forEach(b => {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'll-btn' + (b.ghost ? ' ll-btn--ghost' : '');
+        el.textContent = b.label;
+        el.addEventListener('click', () => { $('dlgBack').hidden = true; if (b.act) b.act(); });
+        bx.appendChild(el);
+      });
+      $('dlgBack').hidden = false;
+      bx.firstChild && bx.firstChild.focus();
+    }
+
+    /* ---------- Fenster ---------- */
+    function openWindow(l) {
+      const ex = wins.find(w => w.folder === l);
+      if (ex) { focusWin(ex.id); return; }
+      const sr = screenEl.getBoundingClientRect();
+      const deskH = sr.height - 52;
+      const n = wins.length % 6;
+      const w = Math.min(500, sr.width - 24), h = Math.min(390, deskH - 24);
+      // rechts öffnen, damit die Dateien auf dem Desktop sichtbar bleiben
+      const x = clamp(sr.width - w - 16 - n * 34, 8, Math.max(8, sr.width - w - 8));
+      const y = clamp(20 + n * 34, 8, Math.max(8, deskH - h - 8));
+      const id = 'w' + (++wseq);
+      const el = document.createElement('div');
+      el.className = 'dk-win';
+      el.dataset.win = id;
+      el.setAttribute('role', 'region');
+      el.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px;';
+      el.innerHTML =
+        '<div class="dk-titlebar"><span class="dk-tico" aria-hidden="true"></span><span class="dk-wtitle"></span>' +
+        '<button type="button" class="dk-close" aria-label="Fenster schließen" title="Schließen">✕</button></div>' +
+        '<div class="dk-toolbar"><button type="button" class="dk-up" aria-label="Eine Ebene nach oben" title="Eine Ebene nach oben">↑</button>' +
+        '<nav class="dk-crumbs" aria-label="Pfadleiste"></nav></div>' +
+        '<div class="dk-body" data-container="' + id + '"></div><div class="dk-status"></div>';
+      const win = { id, folder: l, el, z: 0 };
+      el.querySelector('.dk-close').addEventListener('click', () => closeWin(id));
+      el.querySelector('.dk-up').addEventListener('click', () => { const p = parentOf(win.folder); if (p) navigate(win, p); });
+      el.querySelector('.dk-crumbs').addEventListener('click', ev => {
+        const b = ev.target.closest('.dk-crumb');
+        if (b && b.dataset.loc !== win.folder) { navigate(win, b.dataset.loc); skill('crumb'); }
+      });
+      screenEl.appendChild(el);
+      wins.push(win);
+      renderWindow(win);
+      focusWin(id);
+      paintSel();
+    }
+    function navigate(w, l) {
+      w.folder = l;
+      if (sel.c === w.id) sel = { c: null, ids: new Set() };
+      if (selFolder && selFolder.c === w.id) selFolder = null;
+      renderWindow(w);
+      renderTaskbar();
+      paintSel();
+    }
+    function closeWin(id) {
+      const w = winById(id);
+      if (!w) return;
+      w.el.remove();
+      wins = wins.filter(x => x !== w);
+      if (sel.c === id) sel = { c: null, ids: new Set() };
+      if (selFolder && selFolder.c === id) selFolder = null;
+      renderTaskbar();
+    }
+    function focusWin(id) {
+      const w = winById(id);
+      if (!w) return;
+      w.z = ++zTop;
+      w.el.style.zIndex = w.z;
+      wins.forEach(x => x.el.classList.toggle('is-active', x === w));
+      renderTaskbar();
+    }
+    $('tasks').addEventListener('click', e => {
+      const b = e.target.closest('.dk-task');
+      if (b) focusWin(b.dataset.win);
+    });
+
+    /* ---------- Aktionen ---------- */
+    function afterChange() {
+      sel = { c: null, ids: new Set() };
+      renderAll();
+      if (!solved && analyse().ok) { solved = true; setTimeout(showWin, 500); }
+    }
+    function moveFiles(ids, dest, via) {
+      const list = ids.map(byId).filter(Boolean);
+      const todo = list.filter(it => it.loc !== dest);
+      if (!todo.length) { if (via !== 'drag') toast(list.length === 1 ? 'Die Datei liegt schon hier.' : 'Die Dateien liegen schon hier.'); return; }
+      const moved = [], skipped = [];
+      todo.forEach(it => {
+        if (dest !== 'trash' && nameTaken(dest, it.name, it.id)) { skipped.push(it); return; }
+        it.from = dest === 'trash' ? it.loc : null;
+        it.loc = dest;
+        wrong.delete(it.id);
+        moved.push(it);
+      });
+      if (moved.length) {
+        if (via === 'drag' && dest !== 'trash') skill('drag');
+        if (via === 'cut') skill('cut');
+        if (moved.length > 1 && dest !== 'trash') skill('multi');
+      }
+      afterChange();
+      let msg = '';
+      if (moved.length) {
+        msg = dest === 'trash'
+          ? what(moved) + ' in den Papierkorb gelegt. Im Papierkorb kannst du sie wiederherstellen.'
+          : what(moved) + ' verschoben nach „' + locName(dest) + '“.';
+      }
+      if (skipped.length) msg += (msg ? ' ' : '') + 'In „' + locName(dest) + '“ gibt es schon ' + (skipped.length === 1 ? 'eine Datei „' + skipped[0].name + '“.' : skipped.length + ' Dateien mit gleichem Namen.');
+      if (msg) toast(msg);
+    }
+    function copyName(l, name) {
+      const dot = name.lastIndexOf('.');
+      const base = name.slice(0, dot), ext = name.slice(dot);
+      let n = base + ' - Kopie' + ext, i = 2;
+      while (nameTaken(l, n, null)) n = base + ' - Kopie (' + (i++) + ')' + ext;
+      return n;
+    }
+    function copyFiles(ids, dest) {
+      const created = [], skipped = [];
+      ids.map(byId).filter(Boolean).forEach(it => {
+        let name = it.name;
+        if (nameTaken(dest, name, null)) {
+          if (it.loc === dest) name = copyName(dest, it.name);
+          else { skipped.push(it); return; }
+        }
+        const ni = Object.assign({}, it, { id: 'f' + (++seq), name, loc: dest, from: null });
+        items.push(ni);
+        created.push(ni);
+      });
+      if (created.length) { skill('copy'); if (created.length > 1) skill('multi'); }
+      afterChange();
+      let msg = '';
+      if (created.length) msg = (created.length === 1 ? 'Eine Kopie' : created.length + ' Kopien') + ' eingefügt in „' + locName(dest) + '“. Das Original liegt noch an seinem alten Platz.';
+      if (skipped.length) msg += (msg ? ' ' : '') + 'In „' + locName(dest) + '“ gibt es schon ' + (skipped.length === 1 ? '„' + skipped[0].name + '“.' : skipped.length + ' Dateien mit gleichem Namen.');
+      if (msg) toast(msg);
+    }
+    function cut(ids) {
+      clip = { mode: 'cut', ids: ids.slice() };
+      renderAll();
+      toast(what(ids.map(byId)) + ' ausgeschnitten. Jetzt mit der rechten Maustaste auf den Ziel-Ordner klicken und „Einfügen“ wählen.');
+    }
+    function copy(ids) {
+      clip = { mode: 'copy', ids: ids.slice() };
+      paintSel();
+      toast(what(ids.map(byId)) + ' kopiert. Jetzt mit der rechten Maustaste auf den Ziel-Ordner klicken und „Einfügen“ wählen.');
+    }
+    function paste(dest) {
+      if (!clip || dest === 'trash') return;
+      const ids = clip.ids.filter(id => byId(id));
+      if (!ids.length) { clip = null; return; }
+      if (clip.mode === 'cut') { clip = null; moveFiles(ids, dest, 'cut'); }
+      else copyFiles(ids, dest);
+    }
+    function restore(ids) {
+      const back = [], skipped = [];
+      ids.map(byId).filter(it => it && it.loc === 'trash').forEach(it => {
+        const dest = it.from && (it.from === 'desk' || F[it.from]) ? it.from : 'desk';
+        if (nameTaken(dest, it.name, it.id)) { skipped.push(it); return; }
+        it.loc = dest;
+        it.from = null;
+        back.push(it);
+      });
+      afterChange();
+      let msg = back.length ? what(back) + ' wiederhergestellt.' : '';
+      if (skipped.length) msg += (msg ? ' ' : '') + what(skipped) + ' konnte nicht zurück, weil es am alten Platz schon eine Datei mit dem Namen gibt.';
+      if (msg) toast(msg);
+    }
+    function selectAll(c) {
+      sel = { c, ids: new Set(filesIn(containerLoc(c)).map(i => i.id)) };
+      selFolder = null;
+      paintSel();
+    }
+    function openItem(kind, id, c) {
+      if (kind === 'file') {
+        const it = byId(id);
+        if (it) toast('„' + it.name + '“ ist eine ' + KIND_NAME[it.kind] + ' – das erkennst du an der Endung .' + it.ext + '.');
+        return;
+      }
+      const target = kind === 'trash' ? 'trash' : id;
+      if (kind === 'folder') skill('open');
+      if (c === 'desk') openWindow(target);
+      else navigate(winById(c), target);
+    }
+
+    /* ---------- Prüfen ---------- */
+    function analyse() {
+      const live = items.filter(i => i.loc !== 'trash');
+      const desk = live.filter(i => i.loc === 'desk');
+      const wrongPl = live.filter(i => i.loc !== 'desk' && i.loc !== i.target);
+      const byKey = {};
+      live.forEach(i => { (byKey[i.key] = byKey[i.key] || []).push(i); });
+      const missing = FILES.map(f => f[0]).filter(k => !byKey[k]);
+      const dups = Object.keys(byKey).filter(k => byKey[k].length > 1);
+      return { desk, wrongPl, missing, dups, byKey, ok: !desk.length && !wrongPl.length && !missing.length && !dups.length };
+    }
+    function check() {
+      const a = analyse();
+      if (a.ok) { showWin(); return; }
+      wrong = new Set(a.wrongPl.map(i => i.id));
+      renderAll();
+      const lines = [];
+      if (a.desk.length) lines.push('Auf dem Desktop ' + (a.desk.length === 1 ? 'liegt noch 1 Datei.' : 'liegen noch ' + a.desk.length + ' Dateien.'));
+      a.wrongPl.forEach(i => {
+        lines.push(F[i.loc] && F[i.loc].parent === 'desk'
+          ? '„' + i.name + '“ liegt in ' + pathText(i.loc) + '. Sie gehört in einen Unterordner.'
+          : '„' + i.name + '“ liegt in ' + pathText(i.loc) + '. Passt das?');
+      });
+      a.dups.forEach(k => { lines.push('„' + k + '“ gibt es ' + a.byKey[k].length + '-mal. Eine Datei reicht – lösche die übrigen.'); });
+      a.missing.forEach(k => { lines.push('„' + k + '“ ist im Papierkorb. Hol sie zurück!'); });
+      const max = 8;
+      let html = a.wrongPl.length ? '<p>Rot markierte Dateien liegen im falschen Ordner.</p>' : '';
+      html += '<ul>' + lines.slice(0, max).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>';
+      if (lines.length > max) html += '<p>… und ' + (lines.length - max) + ' weitere Hinweise.</p>';
+      const ok = FILES.length - new Set(a.wrongPl.map(i => i.key).concat(a.desk.map(i => i.key), a.missing)).size;
+      html = '<p><strong>' + Math.max(0, ok) + ' von ' + FILES.length + '</strong> Dateien liegen schon richtig.</p>' + html;
+      dialog('Noch nicht ganz aufgeräumt', html, [{ label: 'Weiter aufräumen' }]);
+    }
+    function showWin() {
+      dialog('Super aufgeräumt! 🎉',
+        '<p>Alle 20 Dateien liegen im richtigen Ordner. Dein Desktop ist leer und ordentlich – jetzt findest du alles schnell wieder.</p>',
+        [{ label: 'Zur Urkunde', act: showEnd }, { label: 'Noch etwas ausprobieren', ghost: true }]);
+    }
+    $('checkBtn').addEventListener('click', check);
+
+    /* ---------- Maus: Gesten ---------- */
+    let gesture = null;
+    function beginGesture(onMove, onUp, onCancel) {
+      gesture = { onMove, onUp, onCancel };
+      window.addEventListener('pointermove', gMove);
+      window.addEventListener('pointerup', gUp);
+      window.addEventListener('pointercancel', cancelGesture);
+    }
+    function endGesture() {
+      window.removeEventListener('pointermove', gMove);
+      window.removeEventListener('pointerup', gUp);
+      window.removeEventListener('pointercancel', cancelGesture);
+      const g = gesture; gesture = null; return g;
+    }
+    function gMove(e) { if (gesture) gesture.onMove(e); }
+    function gUp(e) { const g = endGesture(); if (g) g.onUp(e); }
+    function cancelGesture() { const g = endGesture(); if (g && g.onCancel) g.onCancel(); }
+
+    screenEl.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || !$('dlgBack').hidden) return;
+      const winEl = e.target.closest('.dk-win');
+      if (winEl) focusWin(winEl.dataset.win);
+      if (e.target.closest('button')) return;
+      if (winEl && e.target.closest('.dk-titlebar')) { startWinMove(e, winById(winEl.dataset.win)); return; }
+      const contEl = e.target.closest('[data-container]');
+      if (!contEl) return;
+      const icon = e.target.closest('.dk-icon');
+      if (icon) iconDown(e, icon, contEl.dataset.container);
+      else lassoDown(e, contEl, contEl.dataset.container);
+    });
+
+    function iconDown(e, icon, c) {
+      const kind = icon.dataset.kind, id = icon.dataset.id;
+      const add = e.ctrlKey || e.metaKey;
+      const x0 = e.clientX, y0 = e.clientY;
+      let moved = false, drag = null, collapse = false, addedNow = false, lp = null;
+      if (kind === 'file') {
+        selFolder = null;
+        if (sel.c !== c) sel = { c, ids: new Set() };
+        if (add) { if (!sel.ids.has(id)) { sel.ids.add(id); addedNow = true; } }
+        else if (!sel.ids.has(id)) sel.ids = new Set([id]);
+        else collapse = sel.ids.size > 1;
+      } else {
+        sel = { c, ids: new Set() };
+        selFolder = { c, id };
+      }
+      paintSel();
+      if (e.pointerType !== 'mouse') lp = setTimeout(() => { cancelGesture(); openMenuAt(icon, c, x0, y0); }, 550);
+      beginGesture(ev => {
+        if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 6) {
+          moved = true;
+          clearTimeout(lp);
+          if (kind === 'file') drag = startDrag(c, Array.from(sel.ids));
+          else toast(kind === 'trash' ? 'Der Papierkorb bleibt an seinem Platz.' : 'Ordner bleiben an ihrem Platz. Verschieben kannst du nur Dateien.');
+        }
+        if (drag) drag.move(ev);
+      }, ev => {
+        clearTimeout(lp);
+        if (drag) { drag.drop(ev); return; }
+        if (moved) return;
+        if (kind === 'file') {
+          if (add && !addedNow) sel.ids.delete(id);
+          else if (collapse) sel.ids = new Set([id]);
+          paintSel();
+        }
+        const now = Date.now();
+        if (!add && lastTap && lastTap.id === id && lastTap.c === c && now - lastTap.t < 450) {
+          lastTap = null;
+          openItem(kind, id, c);
+        } else lastTap = { id, c, t: now };
+      }, () => { clearTimeout(lp); if (drag) drag.abort(); });
+    }
+
+    function dropTargetOf(el) {
+      if (!el || !screenEl.contains(el)) return null;
+      const icon = el.closest('.dk-icon');
+      if (icon && icon.dataset.kind === 'folder') return { loc: icon.dataset.id, el: icon };
+      if (icon && icon.dataset.kind === 'trash') return { loc: 'trash', el: icon };
+      const cr = el.closest('.dk-crumb');
+      if (cr) return { loc: cr.dataset.loc, el: cr };
+      const winEl = el.closest('.dk-win');
+      if (winEl) return { loc: winById(winEl.dataset.win).folder, el: winEl.querySelector('.dk-body') };
+      if (el.closest('.dk-desktop')) return { loc: 'desk', el: null };
+      return null;
+    }
+
+    function startDrag(c, ids) {
+      const src = containerLoc(c);
+      const list = ids.map(byId).filter(Boolean);
+      const ghost = $('ghost');
+      ghost.innerHTML = '<span class="dk-ico">' + SVG[list[0].kind] + (list.length > 1 ? '<span class="dk-badge">' + list.length + '</span>' : '') + '</span><span class="dk-ghost-label"></span>';
+      ghost.hidden = false;
+      const label = ghost.querySelector('.dk-ghost-label');
+      document.body.classList.add('is-dragging');
+      let hi = null;
+      function setHi(el) {
+        if (hi === el) return;
+        if (hi) hi.classList.remove('is-drop');
+        hi = el;
+        if (hi) hi.classList.add('is-drop');
+      }
+      function find(ev) {
+        const t = dropTargetOf(document.elementFromPoint(ev.clientX, ev.clientY));
+        return t && t.loc !== src ? t : null;
+      }
+      function cleanup() {
+        setHi(null);
+        ghost.hidden = true;
+        document.body.classList.remove('is-dragging');
+      }
+      return {
+        move(ev) {
+          ghost.style.transform = 'translate(' + (ev.clientX + 10) + 'px,' + (ev.clientY + 6) + 'px)';
+          const t = find(ev);
+          setHi(t ? t.el : null);
+          label.textContent = t ? (t.loc === 'trash' ? '→ in den Papierkorb' : '→ nach ' + locName(t.loc)) : '';
+        },
+        drop(ev) {
+          const t = find(ev);
+          cleanup();
+          if (t) moveFiles(ids, t.loc, 'drag');
+        },
+        abort: cleanup
+      };
+    }
+
+    function lassoDown(e, contEl, c) {
+      const add = e.ctrlKey || e.metaKey;
+      selFolder = null;
+      if (!add || sel.c !== c) sel = { c, ids: new Set() };
+      const base = new Set(sel.ids);
+      paintSel();
+      const x0 = e.clientX, y0 = e.clientY;
+      const b = contEl.getBoundingClientRect();
+      let box = null, lp = null;
+      if (e.pointerType !== 'mouse') lp = setTimeout(() => { cancelGesture(); openMenuAt(null, c, x0, y0); }, 550);
+      const icons = Array.from(contEl.querySelectorAll('.dk-icon[data-kind="file"]'));
+      beginGesture(ev => {
+        if (!box) {
+          if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+          clearTimeout(lp);
+          box = document.createElement('div');
+          box.className = 'dk-lasso';
+          document.body.appendChild(box);
+        }
+        const x = clamp(ev.clientX, b.left, b.right), y = clamp(ev.clientY, b.top, b.bottom);
+        const l = Math.min(x0, x), t = Math.min(y0, y), r = Math.max(x0, x), bo = Math.max(y0, y);
+        box.style.cssText = 'left:' + l + 'px;top:' + t + 'px;width:' + (r - l) + 'px;height:' + (bo - t) + 'px;';
+        const ids = new Set(base);
+        icons.forEach(ic => {
+          const rc = ic.getBoundingClientRect();
+          if (rc.left < r && rc.right > l && rc.top < bo && rc.bottom > t) ids.add(ic.dataset.id);
+        });
+        sel.ids = ids;
+        paintSel();
+      }, () => {
+        clearTimeout(lp);
+        if (box) { box.remove(); if (sel.ids.size > 1) skill('lasso'); }
+      }, () => { clearTimeout(lp); if (box) box.remove(); });
+    }
+
+    function startWinMove(e, w) {
+      const r = w.el.getBoundingClientRect(), sr = screenEl.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      beginGesture(ev => {
+        const x = clamp(ev.clientX - sr.left - dx, 80 - r.width, sr.width - 80);
+        const y = clamp(ev.clientY - sr.top - dy, 0, sr.height - 52 - 40);
+        w.el.style.left = x + 'px';
+        w.el.style.top = y + 'px';
+      }, () => {}, null);
+    }
+
+    /* ---------- Kontextmenü ---------- */
+    let menuEl = null;
+    function hideMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+    document.addEventListener('pointerdown', e => { if (menuEl && !e.target.closest('.dk-menu')) hideMenu(); }, true);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideMenu(); });
+    window.addEventListener('resize', hideMenu);
+    screenEl.addEventListener('scroll', hideMenu, true);
+
+    screenEl.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      cancelGesture();
+      if (!$('dlgBack').hidden) return;
+      const contEl = e.target.closest('[data-container]');
+      if (!contEl) { hideMenu(); return; }
+      const winEl = e.target.closest('.dk-win');
+      if (winEl) focusWin(winEl.dataset.win);
+      openMenuAt(e.target.closest('.dk-icon'), contEl.dataset.container, e.clientX, e.clientY);
+    });
+
+    function openMenuAt(icon, c, x, y) {
+      hideMenu();
+      const l = containerLoc(c);
+      const pasteLabel = dest => 'Einfügen in „' + locName(dest) + '“' + (clip ? ' (' + clip.ids.filter(byId).length + ')' : '');
+      let entries;
+      if (icon && icon.dataset.kind === 'file') {
+        const id = icon.dataset.id;
+        if (!(sel.c === c && sel.ids.has(id))) { sel = { c, ids: new Set([id]) }; selFolder = null; paintSel(); }
+        const ids = Array.from(sel.ids), k = ids.length;
+        entries = k > 1 ? [{ head: k + ' Dateien ausgewählt' }] : [{ head: byId(id).name }];
+        if (l === 'trash') entries.push({ label: 'Wiederherstellen', act: () => restore(ids) });
+        else entries.push(
+          k === 1 ? { label: 'Öffnen', act: () => openItem('file', id, c) } : null,
+          k === 1 ? '-' : null,
+          { label: 'Ausschneiden', act: () => cut(ids) },
+          { label: 'Kopieren', act: () => copy(ids) },
+          '-',
+          { label: 'Löschen', act: () => moveFiles(ids, 'trash', 'delete') }
+        );
+      } else if (icon && icon.dataset.kind === 'folder') {
+        const id = icon.dataset.id;
+        sel = { c, ids: new Set() };
+        selFolder = { c, id };
+        paintSel();
+        entries = [
+          { head: 'Ordner ' + F[id].name },
+          { label: 'Öffnen', act: () => openItem('folder', id, c) },
+          { label: pasteLabel(id), act: () => paste(id), disabled: !clip },
+          '-',
+          { label: 'Ausschneiden', disabled: true },
+          { label: 'Kopieren', disabled: true },
+          { note: 'Ordner bleiben an ihrem Platz.' }
+        ];
+      } else if (icon) {
+        entries = [{ head: 'Papierkorb' }, { label: 'Öffnen', act: () => openItem('trash', 'trash', c) }];
+      } else {
+        entries = [
+          { label: pasteLabel(l), act: () => paste(l), disabled: !clip || l === 'trash' },
+          { label: 'Alle Dateien auswählen', act: () => selectAll(c), disabled: !filesIn(l).length }
+        ];
+      }
+      menuEl = document.createElement('div');
+      menuEl.className = 'dk-menu';
+      menuEl.setAttribute('role', 'menu');
+      entries.filter(Boolean).forEach(en => {
+        if (en === '-') { menuEl.appendChild(document.createElement('hr')); return; }
+        if (en.head || en.note) {
+          const p = document.createElement('p');
+          p.className = en.head ? 'dk-menu-head' : 'dk-menu-note';
+          p.textContent = en.head || en.note;
+          menuEl.appendChild(p);
+          return;
+        }
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('role', 'menuitem');
+        b.textContent = en.label;
+        b.disabled = !!en.disabled;
+        b.addEventListener('click', () => { hideMenu(); if (en.act) en.act(); });
+        menuEl.appendChild(b);
+      });
+      menuEl.addEventListener('contextmenu', ev => ev.preventDefault());
+      document.body.appendChild(menuEl);
+      const mr = menuEl.getBoundingClientRect();
+      menuEl.style.left = clamp(x, 4, window.innerWidth - mr.width - 4) + 'px';
+      menuEl.style.top = (y + mr.height > window.innerHeight - 4 ? Math.max(4, y - mr.height) : y) + 'px';
+    }
+
+    /* ---------- Ablauf ---------- */
+    function reset() {
+      wins.forEach(w => w.el.remove());
+      wins = [];
+      seq = 0;
+      items = shuffle(FILES).map(([name, target]) => {
+        const ext = name.split('.').pop().toLowerCase();
+        return { id: 'f' + (++seq), key: name, name, ext, kind: KIND[ext], target, loc: 'desk', from: null };
+      });
+      sel = { c: null, ids: new Set() };
+      selFolder = null; clip = null; wrong = new Set(); skills = new Set(); solved = false; lastTap = null;
+      $('dlgBack').hidden = true;
+      $('toast').hidden = true;
+      renderAll();
+      renderSkills();
+    }
+    function showGame() {
+      $('intro').hidden = true;
+      $('ende').hidden = true;
+      $('game').hidden = false;
+      reset();
+      window.scrollTo(0, 0);
+    }
+    function showEnd() {
+      $('game').hidden = true;
+      $('ende').hidden = false;
+      fillCert();
+      window.scrollTo(0, 0);
+      $('nameIn').focus();
+    }
+    function fillCert() {
+      $('certDate').textContent = new Date().toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+      $('certName').textContent = $('nameIn').value.trim() || ' ';
+      $('certList').innerHTML = ['<li>20 Dateien sortiert</li>'].concat(
+        SKILLS.filter(s => skills.has(s[0])).map(s => '<li>' + esc(s[2]) + '</li>')
+      ).join('');
+    }
+    $('startBtn').addEventListener('click', showGame);
+    $('againBtn').addEventListener('click', showGame);
+    $('resetBtn').addEventListener('click', () => dialog('Neu anfangen?', '<p>Alle Dateien liegen dann wieder durcheinander auf dem Desktop.</p>',
+      [{ label: 'Ja, neu anfangen', act: reset }, { label: 'Abbrechen', ghost: true }]));
+    $('nameIn').addEventListener('input', fillCert);
+    $('printBtn').addEventListener('click', () => { fillCert(); window.print(); });
+  })();
+  </script>
+</body>
+</html>
