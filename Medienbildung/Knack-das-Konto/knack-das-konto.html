@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knack das Konto! | Lernland</title>
+  <meta name="description" content="Knack Ollis Konto und merke selbst, wie schnell ein schwaches Passwort fällt.">
+  <style>
+    :root {
+      --ll-ink: #000000;
+      --ll-muted: #4a4a4a;
+      --ll-paper: #ffffff;
+      --ll-line: #000000;
+      --ll-line-soft: #d9d9d9;
+      --ll-accent: #ee5522;
+      --ll-success: #237a57;
+      --ll-success-bg: #e5f4ec;
+      --ll-error: #cf2e2e;
+      --ll-error-bg: #fdeaea;
+      --ll-hint: #7a5c00;
+      --ll-hint-bg: #fff4cc;
+      --ll-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      --ll-border-width: 3px;
+      --ll-radius: 8px;
+      --ll-radius-sm: 5px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      font: 400 1.0625rem/1.5 var(--ll-font-ui);
+    }
+
+    :focus-visible { outline: 3px solid var(--ll-accent); outline-offset: 2px; }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 16px 32px;
+    }
+
+    .icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      fill: currentColor;
+      vertical-align: -0.125em;
+      flex: none;
+    }
+
+    /* Warnkasten */
+    .warn {
+      display: flex;
+      gap: 12px;
+      margin: 0 0 24px;
+      padding: 14px 16px;
+      background: var(--ll-error-bg);
+      border: var(--ll-border-width) solid var(--ll-error);
+      border-radius: var(--ll-radius);
+    }
+    .warn .icon { width: 1.75rem; height: 1.75rem; color: var(--ll-error); margin-top: 2px; }
+    .warn p { margin: 0; }
+    .warn p + p { margin-top: 6px; }
+    .warn strong { font-size: 1.125rem; }
+
+    h1 { margin: 0 0 8px; font-size: 1.75rem; line-height: 1.2; }
+    h2 { margin: 0 0 12px; font-size: 1.25rem; line-height: 1.25; }
+    .lead { margin: 0 0 24px; }
+
+    /* Karten */
+    .card {
+      margin: 0 0 20px;
+      padding: 16px;
+      background: var(--ll-paper);
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: var(--ll-radius);
+    }
+
+    /* Steckbrief */
+    .profile-head { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      color: var(--ll-paper);
+      background: var(--ll-ink);
+      border-radius: 50%;
+    }
+    .avatar .icon { width: 26px; height: 26px; }
+    .profile-head h2 { margin: 0; }
+    .profile-head p { margin: 0; color: var(--ll-muted); }
+
+    .facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0;
+    }
+    .facts div {
+      padding: 8px 10px;
+      border: 2px solid var(--ll-line-soft);
+      border-radius: var(--ll-radius-sm);
+    }
+    .facts dt { color: var(--ll-muted); font-size: 0.875rem; }
+    .facts dd { margin: 0; font-weight: 700; font-size: 1.0625rem; }
+
+    /* Anmeldefenster */
+    .login { padding: 0; overflow: hidden; }
+    .login-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      color: var(--ll-paper);
+      background: var(--ll-ink);
+    }
+    .login-bar h2 { margin: 0; font-size: 1.125rem; }
+    .login-body { padding: 16px; }
+
+    .lock-box {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 16px;
+      border: var(--ll-border-width) solid var(--ll-line);
+      border-radius: 50%;
+    }
+    .lock-box .icon { width: 34px; height: 34px; }
+    .lock-open { display: none; }
+    .is-open .lock-box { color: var(--ll-success); background: var(--ll-success-bg); border-color: var(--ll-success); }
+    .is-open .lock-closed { display: none; }
+    .is-open .lock-open { display: inline-block; }
+    .is-open .lock-box { animation: pop 0.7s ease-out; }
+    @keyframes pop {
+      0%   { transform: scale(1) rotate(0); }
+      30%  { transform: scale(1.25) rotate(-10deg); }
+      55%  { transform: scale(0.95) rotate(6deg); }
+      80%  { transform: scale(1.08) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .is-open .lock-box { animation: none; }
+    }
+
+    .field { margin: 0 0 14px; }
+    .field label { display: block; margin: 0 0 4px; font-weight: 700; }
+    .field input {
+      width: 100%;
+      min-height: 50px;
+      padding: 10px 12px;
+      color: var(--ll-ink);
+      background: var(--ll-paper);
+      border: 2px solid var(--ll-line);
+      border-radius: var(--ll-radius-sm);
+      font: 400 1.125rem var(--ll-font-ui);
+    }
+    .field input[readonly] { background: #f2f2f2; color: var(--ll-muted); }
+    .field input:disabled { background: #f2f2f2; }
+
+    .pw-row { display: flex; gap: 8px; }
+    .pw-row input { flex: 1; min-width: 0; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 50px;
+      padding: 10px 18px;
+      color: var(--ll-paper);
+      background: var(--ll-ink);
+      border: var(--ll-border-width) solid var(--ll-ink);
+      border-radius: var(--ll-radius-sm);
+      cursor: pointer;
+      font: 700 1.0625rem var(--ll-font-ui);
+    }
+    .btn:hover { background: #333; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-wide { width: 100%; }
+    .btn-ghost { color: var(--ll-ink); background: var(--ll-paper); }
+    .btn-ghost:hover { background: #f2f2f2; }
+    .btn-icon { width: 50px; padding: 0; flex: none; }
+    .btn-icon .icon { width: 22px; height: 22px; }
+
+    .counter {
+      margin: 14px 0 0;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .feedback { margin: 10px 0 0; text-align: center; min-height: 1.5em; }
+    .feedback.is-wrong { color: var(--ll-error); font-weight: 700; }
+
+    .hints { margin: 12px 0 0; padding: 0; list-style: none; }
+    .hints li {
+      display: flex;
+      gap: 10px;
+      margin: 8px 0 0;
+      padding: 10px 12px;
+      color: var(--ll-ink);
+      background: var(--ll-hint-bg);
+      border: 2px solid var(--ll-hint);
+      border-radius: var(--ll-radius-sm);
+    }
+    .hints .icon { width: 1.25rem; height: 1.25rem; margin-top: 2px; color: var(--ll-hint); }
+
+    /* Auswertung */
+    .result {
+      margin: 0 0 20px;
+      padding: 16px;
+      background: var(--ll-success-bg);
+      border: var(--ll-border-width) solid var(--ll-success);
+      border-radius: var(--ll-radius);
+    }
+    .result[hidden] { display: none; }
+    .result h2 { color: var(--ll-success); }
+    .result p { margin: 0 0 12px; }
+    .result h2:focus { outline: none; }
+    .result h2:focus-visible { outline: 3px solid var(--ll-accent); outline-offset: 2px; }
+
+    footer {
+      margin-top: 32px;
+      padding-top: 14px;
+      border-top: 2px solid var(--ll-line-soft);
+      color: var(--ll-muted);
+      font-size: 0.875rem;
+    }
+    footer p { margin: 0 0 4px; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 380px) {
+      h1 { font-size: 1.5rem; }
+      .facts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="warn" role="note">
+      <svg class="icon" viewBox="0 0 512 512" aria-hidden="true"><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></svg>
+      <div>
+        <p><strong>Gib hier niemals dein echtes Passwort ein! Denk dir zum Ausprobieren immer ein neues aus.</strong></p>
+        <p>Diese Seite schickt nichts ins Internet und speichert nichts.</p>
+      </div>
+    </div>
+
+    <main>
+      <h1>Knack Ollis Konto!</h1>
+      <p class="lead">Olli ist 11 Jahre alt und spielt gern online. Kannst du sein Passwort herausfinden? Schau dir dafür seinen Steckbrief an.</p>
+
+      <section class="card" aria-labelledby="profile-title">
+        <div class="profile-head">
+          <span class="avatar">
+            <svg class="icon" viewBox="0 0 448 512" aria-hidden="true"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>
+          </span>
+          <div>
+            <h2 id="profile-title">Ollis Steckbrief</h2>
+            <p>11 Jahre alt</p>
+          </div>
+        </div>
+        <dl class="facts">
+          <div><dt>Hund</dt><dd>Bello</dd></div>
+          <div><dt>geboren</dt><dd>2015</dd></div>
+          <div><dt>Lieblingsverein</dt><dd>SV Grünwiese</dd></div>
+          <div><dt>Hobby</dt><dd>Fußball</dd></div>
+        </dl>
+      </section>
+
+      <section class="card login" id="login" aria-labelledby="login-title">
+        <div class="login-bar">
+          <svg class="icon" viewBox="0 0 448 512" aria-hidden="true"><path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"/></svg>
+          <h2 id="login-title">Anmelden</h2>
+        </div>
+        <div class="login-body">
+          <div class="lock-box" aria-hidden="true">
+            <svg class="icon lock-closed" viewBox="0 0 448 512"><path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"/></svg>
+            <svg class="icon lock-open" viewBox="0 0 576 512"><path d="M352 144c0-44.2 35.8-80 80-80s80 35.8 80 80v48c0 17.7 14.3 32 32 32s32-14.3 32-32V144C576 64.5 511.5 0 432 0S288 64.5 288 144v48H64c-35.3 0-64 28.7-64 64V448c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V256c0-35.3-28.7-64-64-64H352V144z"/></svg>
+          </div>
+
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="user">Benutzername</label>
+              <input id="user" type="text" value="olli" readonly autocomplete="off" spellcheck="false">
+            </div>
+            <div class="field">
+              <label for="pw">Passwort</label>
+              <div class="pw-row">
+                <input id="pw" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <button type="button" class="btn btn-ghost btn-icon" id="toggle" aria-pressed="false" aria-label="Passwort anzeigen">
+                  <svg class="icon eye" viewBox="0 0 576 512" aria-hidden="true"><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"/></svg>
+                  <svg class="icon eye-slash" viewBox="0 0 640 512" aria-hidden="true" style="display:none"><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c8.4-19.3 10.6-41.4 4.8-63.3c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zM373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5L373 389.9z"/></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-wide" id="loginBtn">Anmelden</button>
+          </form>
+
+          <p class="counter" id="counter">Versuche: 0</p>
+          <p class="feedback" id="feedback" aria-live="polite"></p>
+          <ul class="hints" id="hints" aria-live="polite"></ul>
+        </div>
+      </section>
+
+      <section class="result" id="result" hidden aria-labelledby="result-title">
+        <h2 id="result-title" tabindex="-1"></h2>
+        <p>Ein Programm hätte Ollis Passwort in weniger als einer Sekunde gefunden.</p>
+        <p>Warum? Es besteht aus dem Namen seines Hundes und seinem Geburtsjahr – genau das probieren Angreifer zuerst.</p>
+        <button type="button" class="btn" id="again">
+          <svg class="icon" viewBox="0 0 512 512" aria-hidden="true"><path d="M463.5 224H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5z"/></svg>
+          Nochmal
+        </button>
+      </section>
+    </main>
+
+    <footer>
+      <p>Lernland Digital · Jannetje Egbers · CC BY-NC-SA 4.0</p>
+      <p>Icons: Font Awesome Free, Lizenz CC BY 4.0</p>
+      <p>Version v1.0</p>
+    </footer>
+  </div>
+
+  <svg style="display:none" aria-hidden="true">
+    <symbol id="i-bulb" viewBox="0 0 384 512"><path d="M272 384c9.6-31.9 29.5-59.1 49.2-86.2l0 0c5.2-7.1 10.4-14.2 15.4-21.4c19.8-28.5 31.4-63 31.4-100.3C368 78.8 289.2 0 192 0S16 78.8 16 176c0 37.3 11.6 71.9 31.4 100.3c5 7.2 10.2 14.3 15.4 21.4l0 0c19.8 27.1 39.7 54.4 49.2 86.2H272zM192 512c44.2 0 80-35.8 80-80V416H112v16c0 44.2 35.8 80 80 80zM112 176c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-61.9 50.1-112 112-112c8.8 0 16 7.2 16 16s-7.2 16-16 16c-44.2 0-80 35.8-80 80z"/></symbol>
+  </svg>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const SECRET = 'bello2015';
+    const HINTS = [
+      { after: 5, text: 'Tipp: Schau dir Ollis Steckbrief genau an.' },
+      { after: 10, text: 'Tipp: Olli hat zwei Dinge aus seinem Steckbrief zusammengesetzt.' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const form = $('loginForm');
+    const pw = $('pw');
+    const loginBtn = $('loginBtn');
+    const toggle = $('toggle');
+    const counter = $('counter');
+    const feedback = $('feedback');
+    const hints = $('hints');
+    const login = $('login');
+    const result = $('result');
+    const resultTitle = $('result-title');
+
+    let tries = 0;
+    let shown = 0;
+
+    function setCounter() { counter.textContent = 'Versuche: ' + tries; }
+
+    function addHint(text) {
+      const li = document.createElement('li');
+      li.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-bulb"/></svg>';
+      const span = document.createElement('span');
+      span.textContent = text;
+      li.appendChild(span);
+      hints.appendChild(li);
+    }
+
+    function setVisible(visible) {
+      pw.type = visible ? 'text' : 'password';
+      toggle.setAttribute('aria-pressed', String(visible));
+      toggle.setAttribute('aria-label', visible ? 'Passwort verbergen' : 'Passwort anzeigen');
+      toggle.querySelector('.eye').style.display = visible ? 'none' : '';
+      toggle.querySelector('.eye-slash').style.display = visible ? '' : 'none';
+    }
+
+    toggle.addEventListener('click', () => {
+      setVisible(pw.type === 'password');
+      pw.focus();
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const guess = pw.value.trim();
+      if (!guess) {
+        feedback.className = 'feedback';
+        feedback.textContent = 'Gib zuerst ein Passwort ein.';
+        pw.focus();
+        return;
+      }
+      tries++;
+      setCounter();
+
+      if (guess.toLowerCase() === SECRET) {
+        success();
+        return;
+      }
+
+      const wrong = tries;
+      feedback.className = 'feedback is-wrong';
+      // Text leicht variieren, damit Screenreader jede Rückmeldung neu vorlesen
+      feedback.textContent = 'Leider falsch. Versuche: ' + wrong + '.';
+      while (shown < HINTS.length && wrong >= HINTS[shown].after) {
+        addHint(HINTS[shown].text);
+        shown++;
+      }
+      pw.select();
+    });
+
+    function success() {
+      login.classList.add('is-open');
+      feedback.className = 'feedback';
+      feedback.textContent = 'Das Schloss ist offen!';
+      pw.disabled = true;
+      toggle.disabled = true;
+      loginBtn.disabled = true;
+      resultTitle.textContent = 'Geknackt in ' + tries + (tries === 1 ? ' Versuch!' : ' Versuchen!');
+      result.hidden = false;
+      resultTitle.focus();
+    }
+
+    function reset() {
+      tries = 0;
+      shown = 0;
+      setCounter();
+      login.classList.remove('is-open');
+      feedback.className = 'feedback';
+      feedback.textContent = '';
+      hints.innerHTML = '';
+      pw.disabled = false;
+      toggle.disabled = false;
+      loginBtn.disabled = false;
+      pw.value = '';
+      setVisible(false);
+      result.hidden = true;
+      pw.focus();
+    }
+
+    $('again').addEventListener('click', reset);
+
+    // Eingaben beim Verlassen und beim Zurückkehren leeren
+    function clearInput() { pw.value = ''; setVisible(false); }
+    window.addEventListener('pagehide', clearInput);
+    window.addEventListener('pageshow', clearInput);
+  })();
+  </script>
+</body>
+</html>
